@@ -1,0 +1,27 @@
+; ============================================================
+; Parcial 2026 1C - Ej 1: zona foo.example.org (consigna reconstruida desde la resolución del repo)
+; /etc/bind/named.conf.local:
+;     zone "foo.example.org" { type master; file "/etc/bind/zones/db.foo.example.org"; };
+; Validar: named-checkzone foo.example.org 2026-1c-ej1-foo.example.org.db
+; ============================================================
+$ORIGIN foo.example.org.
+$TTL 1m                                   ; TTL por defecto: 1 minuto
+
+@ IN SOA ns.foo.example.org. example\.admin.foo.com.ar. (
+        2026052801 ; Serial  (AAAAMMDDNN)
+        7d         ; Refresh
+        1d         ; Retry
+        10d        ; Expire
+        1m )       ; Negative TTL
+; mail del responsable = example.admin@foo.com.ar  -> el "." del usuario se escapa con "\."
+
+@        IN NS ns
+ns       IN A  1.2.3.4                    ; glue: el NS está dentro de la zona, necesita su A
+
+@    7d  IN MX 10 mx1.protos.foo.         ; nombres de OTRA zona: punto final obligatorio
+@    7d  IN MX 5  mx2.protos.foo.         ; menor número = más prioridad -> mx2 se usa primero
+
+@    1h  IN A  123.123.123.123            ; TTL propio: 1 hora
+www  7d  IN CNAME @                       ; www.foo.example.org -> foo.example.org (el CNAME NO puede ir en @, sí apuntar a @)
+
+@        IN TXT "v=spf1 ip4:1.2.3.4 -all" ; SPF: sólo 1.2.3.4 puede mandar mail como @foo.example.org

@@ -1,0 +1,40 @@
+# ============================================================
+# Guía 3 - E47: http://foo.pdc.lab  ->  contenido de http://protos.foo/
+#           SIN que cambie la URL del browser  => PROXY REVERSO
+#
+# Solución "estable" = DNS + nginx:
+#   1) bind9 (zona foo.pdc.lab) resuelve foo.pdc.lab -> 10.0.2.15 (esta VM)
+#   2) nginx recibe "Host: foo.pdc.lab" y reenvía a protos.foo
+#
+# ¿Por qué NO alcanza con poner la IP de protos.foo en /etc/hosts?
+#   Porque el browser igual manda "Host: foo.pdc.lab" y el server de
+#   protos.foo no tiene un virtual host con ese nombre (responde otra
+#   cosa o 404). Además depende de cada máquina (no es estable).
+#
+# NOTA (26/10/2026): protos.foo (35.211.115.38) NO responde (connection
+# refused), así que hoy esto devuelve 502 Bad Gateway. Para ver el
+# mecanismo funcionando cambiá "protos.foo" por "example.com" abajo,
+# hacé sudo nginx -t && sudo systemctl reload nginx y probá:
+#     curl -v http://foo.pdc.lab/
+# ============================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name foo.pdc.lab;
+
+    # Resolver el nombre del upstream EN CADA PEDIDO (no al arrancar).
+    # Si se pone  proxy_pass http://protos.foo/;  directo, nginx lo
+    # resuelve al iniciar y si en ese momento no hay DNS/red, nginx NO
+    # ARRANCA ("host not found in upstream") y se caen TODOS los sitios.
+    resolver 127.0.0.53 valid=30s;      # systemd-resolved (que a su vez usa nuestro bind, E53)
+    set $upstream_protos protos.foo;
+
+    location / {
+        proxy_pass http://$upstream_protos;
+        # Con proxy_pass a un nombre, nginx manda por defecto
+        #   Host: <nombre del upstream>   (= $proxy_host = protos.foo)
+        # que es lo que necesita el server de destino.
+        # NO poner "proxy_set_header Host $host;" acá: mandaría foo.pdc.lab.
+    }
+}

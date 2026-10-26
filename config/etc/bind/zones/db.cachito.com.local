@@ -1,0 +1,34 @@
+$TTL 1d
+$ORIGIN cachito.com.
+
+@	IN	SOA	ns1.cachito.com. sgiambelluca.itba.edu.ar. (
+	2026102600	; serial - es un numero que va contando la cantidad de modificaciones, se utiliza como verificacion de version y siempre aumenta
+	1h	; refresh - Es lo que le dice el servidor primario al secundario de cada cuanto tiempo deban de consultar los registros
+	15m	; retry - en caso que el primary no pueda contestar el refresh, el secundario debe consultar una vez pasado el tiempo del retry
+	8h	; expire - tiempo que le dice a los secondary por cuanto tiempo volves a intentar
+	30m	; negative ttl - por cuanto tiempo podes cachear la rta 404
+)
+
+@	IN	NS	ns1
+ns1	IN	A	240.0.0.1
+
+@	IN	MX	1	smtp
+@	IN	MX	10	smtp2
+
+super	IN	MX	1	smtp
+
+smtp	IN	A	240.0.0.2
+smtp2	IN	A	240.0.0.3
+
+ipv6	IN	AAAA	::1
+
+; CORREGIDO 26/10 (Claude): la línea original era
+;     @	IN	CNAME	ipv6
+; y es INVÁLIDA: un CNAME no puede convivir con otros registros del mismo
+; nombre, y en el apex (@) ya están SOA, NS y MX. named rechaza la zona entera:
+;     "cachito.com: CNAME and other data"
+; Si la idea era que cachito.com tenga IPv6, se pone el AAAA directo:
+@	IN	AAAA	::1
+
+super	IN	TXT	"v=spf1 include:_spf.google.com ip4:190.104.250.100 ip4:190.104.250.101 ip4:52.67.50.43 ip4:54.94.246.207 ip4:52.67.178.216 ip4:200.32.57.124 include:_spf.perfit-mail.net include:spf.mandrillapp.com -all"
+smtp	1m	IN	TXT	"Lo que quieras jijolin"

@@ -1,0 +1,29 @@
+; ============================================================
+; Ejercicios varios (repo) - Ej 10: zona carlitos.com.ar
+; named.conf.local:  zone "carlitos.com.ar" { type master; file "/etc/bind/zones/db.carlitos.com.ar"; };
+; Validar:  named-checkzone carlitos.com.ar ej10-db.carlitos.com.ar
+; ============================================================
+$ORIGIN carlitos.com.ar.
+$TTL 1h
+
+@ IN SOA ns.carlitos.com.ar. carloselmascapo.carlitos.com.ar. (   ; responsable: carloselmascapo@carlitos.com.ar
+        2026102601 ; serial
+        1h         ; refresh
+        15m        ; retry
+        1w         ; expire  (> refresh + retry)
+        5m )       ; negative TTL
+
+@        IN NS ns                         ; NS obligatorio (sin NS la zona no carga)
+ns       IN A  1.2.3.4                    ; glue del NS
+
+@    2h  IN A  1.2.3.4                    ; "A a 1.2.3.4 con TTL de dos horas"
+mysite 1w IN CNAME example.org.           ; "CNAME a example.org por una semana" (punto final: es de OTRA zona)
+
+@    1d  IN MX 20 mail20                  ; "métricas 20, 30 y 40 con validez de 1 día"
+@    1d  IN MX 30 mail30
+@    1d  IN MX 40 mail40
+; La resolución del repo no tiene estas tres líneas: el MX tiene que apuntar a nombres CON dirección.
+; (named-checkzone avisa "MX 'mail20.carlitos.com.ar' has no address records"). Las IPs son un supuesto.
+mail20   IN A  1.2.3.20
+mail30   IN A  1.2.3.30
+mail40   IN A  1.2.3.40

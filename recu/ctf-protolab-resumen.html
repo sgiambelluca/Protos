@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOLAB CTF · resumen para practicar</title>
+<style>
+:root{
+  --bg:#f4f5f9; --card:#fff; --text:#1d2433; --muted:#6b7385; --line:#e3e6ee;
+  --accent:#4f46e5; --accent-soft:#eef0ff;
+  --ok:#15803d; --ok-soft:#e7f7ec; --warn:#b45309; --warn-soft:#fff5e5;
+  --code-bg:#0f1424; --code-text:#e3e7f3; --code-muted:#7d86a3; --code-out:#86efac;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+  --t-http:#2563eb; --t-net:#0891b2; --t-dns:#7c3aed; --t-mail:#db2777; --t-tok:#d97706; --t-ssh:#15803d;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1220; --card:#181c2e; --text:#e6e8f0; --muted:#9aa1b5; --line:#2a3048;
+    --accent:#8b8cf8; --accent-soft:#23264a;
+    --ok:#4ade80; --ok-soft:#14301f; --warn:#fbbf24; --warn-soft:#352a12;
+    --code-bg:#0a0d18;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
+    --t-http:#60a5fa; --t-net:#22d3ee; --t-dns:#a78bfa; --t-mail:#f472b6; --t-tok:#fbbf24; --t-ssh:#4ade80;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif}
+code,pre,kbd{font-family:ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,monospace}
+a{color:var(--accent)}
+
+.layout{max-width:1120px;margin:0 auto;padding:24px 16px 80px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px}
+.layout>main{min-width:0}
+@media (max-width:900px){.layout{grid-template-columns:1fr}.toc{display:none}}
+
+/* TOC */
+.toc{position:sticky;top:16px;align-self:start;font-size:14px}
+.toc h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;color:var(--text);text-decoration:none;border-left:3px solid transparent}
+.toc a:hover{background:var(--card)}
+.toc a.on{background:var(--card);border-left-color:var(--accent);font-weight:600;box-shadow:var(--shadow)}
+.toc .n{font:600 11px/1 ui-monospace,monospace;color:var(--muted);min-width:22px}
+
+/* header */
+.hero{background:linear-gradient(135deg,#1e1b4b,#312e81 55%,#4f46e5);color:#fff;border-radius:18px;padding:26px 26px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero::after{content:"$ curl -H 'Tiki: Taka'";position:absolute;right:-10px;bottom:-14px;font:700 54px/1 ui-monospace,monospace;opacity:.07;white-space:nowrap}
+.hero .kicker{font:600 12px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.hero h1{margin:8px 0 6px;font-size:30px;letter-spacing:-.01em}
+.hero p{margin:0;opacity:.88;max-width:640px}
+.hero code{background:rgba(255,255,255,.14);padding:1px 6px;border-radius:5px;font-size:.92em}
+.hero .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.toggle{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:999px;padding:6px 14px 6px 6px;font:inherit;font-size:14px;cursor:pointer}
+.toggle .sw{width:34px;height:20px;border-radius:99px;background:rgba(255,255,255,.3);position:relative;transition:background .2s}
+.toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+body.practice .toggle .sw{background:#22c55e}
+body.practice .toggle .sw::after{transform:translateX(14px)}
+.hero .ghost{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer}
+
+/* flow */
+.flow{display:flex;gap:0;margin:20px 0 6px;overflow-x:auto;padding-bottom:4px}
+.step{flex:1;min-width:104px;text-decoration:none;color:var(--text);text-align:center;position:relative;padding:0 4px}
+.step::before{content:"";position:absolute;top:19px;left:-50%;right:50%;height:2px;background:var(--line);z-index:0}
+.step:first-child::before{display:none}
+.step .dot{width:40px;height:40px;margin:0 auto 6px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 ui-monospace,monospace;color:#fff;background:var(--c);position:relative;z-index:1;box-shadow:0 0 0 4px var(--bg)}
+.step .lbl{font-size:12px;color:var(--muted);line-height:1.3}
+.step:hover .dot{transform:scale(1.08)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px 24px;margin-top:18px}
+.card h2{margin:0;font-size:21px;letter-spacing:-.01em}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 8px}
+.card p{margin:8px 0}
+.card ul,.card ol{padding-left:22px;margin:8px 0}
+.card li{margin:4px 0}
+.card code{background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:5px;font-size:.88em}
+.head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.num{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:700 15px/1 ui-monospace,monospace;color:#fff;background:var(--c);flex:none}
+.head .ttl{flex:1;min-width:200px}
+.head .sub{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+.ep{font:12px/1.6 ui-monospace,monospace;padding:1px 8px;border-radius:6px;border:1px solid var(--line);color:var(--muted)}
+.reveal{font:inherit;font-size:13px;border:1px solid var(--line);background:none;color:var(--muted);border-radius:8px;padding:5px 10px;cursor:pointer;display:none}
+body.practice .reveal{display:inline-block}
+
+.q{border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 7%,transparent);border-radius:0 10px 10px 0;padding:10px 14px;margin:16px 0 4px}
+.q b{color:var(--c)}
+
+.answer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ok-soft);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent);border-radius:12px;padding:12px 14px;margin:16px 0}
+.answer .k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ok)}
+.answer .v{font:600 16px/1.4 ui-monospace,monospace;word-break:break-all}
+.answer .note{color:var(--muted);font-size:14px}
+
+/* spoilers */
+.ans{transition:filter .2s,background .2s;border-radius:4px}
+body.practice .ans:not(.shown){filter:blur(6px);cursor:pointer;user-select:none;background:color-mix(in srgb,var(--muted) 20%,transparent)}
+body.practice .ans:not(.shown):hover{filter:blur(4px)}
+
+/* code */
+.code{position:relative;margin:12px 0}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-text);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.6;border:1px solid rgba(255,255,255,.06)}
+.code pre .c{color:var(--code-muted);font-style:italic}
+.code pre .out{color:var(--code-out);display:inline-block}
+.code pre .p{color:#818cf8;user-select:none}
+.code pre .s{color:#fcd34d}
+.code .copy{position:absolute;top:8px;right:8px;font:12px/1 system-ui,sans-serif;background:rgba(255,255,255,.08);color:#cbd2e6;border:1px solid rgba(255,255,255,.14);border-radius:7px;padding:6px 9px;cursor:pointer;opacity:0;transition:opacity .15s}
+.code:hover .copy,.copy:focus{opacity:1}
+.copy.ok{background:#16a34a;border-color:#16a34a;color:#fff;opacity:1}
+.code .lang{position:absolute;top:-9px;left:14px;font:600 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--card);color:var(--muted);border:1px solid var(--line);padding:3px 7px;border-radius:5px}
+
+.concepts{display:grid;gap:10px}
+.concept{border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.concept p{margin:4px 0}
+
+.soa{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.soa div{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px;color:var(--muted)}
+.soa div b{display:block;font:600 14px/1.4 ui-monospace,monospace;color:var(--text)}
+.soa div.hl{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,transparent)}
+.soa div.hl b{color:var(--c)}
+@media (max-width:560px){.soa{grid-template-columns:repeat(3,1fr)}}
+
+.hint{display:flex;gap:10px;border-radius:12px;padding:10px 14px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);margin:12px 0}
+.hint::before{content:"💡";flex:none}
+.bonus{display:flex;gap:10px;border-radius:12px;padding:10px 14px;background:var(--accent-soft);margin:12px 0}
+.bonus::before{content:"🔑";flex:none}
+
+.steps{counter-reset:s;list-style:none;padding:0!important}
+.steps>li{counter-increment:s;position:relative;padding-left:40px;margin:14px 0!important}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font:700 13px/1 ui-monospace,monospace}
+
+.win{font:700 13px/1.15 ui-monospace,monospace;white-space:pre;color:var(--ok);background:var(--code-bg);border-radius:12px;padding:16px;text-align:center;overflow-x:auto;margin:12px 0}
+kbd{font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--bg)}
+
+.todo{list-style:none;counter-reset:t;padding:0!important;margin:10px 0!important}
+.todo>li{counter-increment:t;position:relative;padding:10px 14px 10px 46px;border:1px solid var(--line);border-radius:12px;margin:8px 0!important}
+.todo>li::before{content:counter(t);position:absolute;left:12px;top:10px;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font:700 12px/1 ui-monospace,monospace}
+.todo .code{margin:8px 0 2px}
+.where{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;white-space:nowrap;vertical-align:1px}
+.where::before{content:"📍"}
+.goal{display:flex;gap:10px;align-items:flex-start;font-size:15px;margin:14px 0 4px;padding:10px 14px;border-radius:12px;background:var(--bg)}
+.goal b{color:var(--c);white-space:nowrap}
+table.map{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+table.map th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.map td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.map td:first-child a{display:inline-grid;place-items:center;width:30px;height:24px;border-radius:7px;color:#fff;background:var(--c);font:700 12px/1 ui-monospace,monospace;text-decoration:none}
+.tablewrap{overflow-x:auto}
+table.map code{word-break:break-all}
+.warn-card{border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
+.foot{color:var(--muted);font-size:13px;text-align:center;margin-top:30px}
+</style>
+</head>
+<body class="practice">
+<div class="layout">
+
+<nav class="toc" id="toc">
+  <h4>Contenido</h4>
+  <a href="#intro"><span class="n">··</span>Cómo funciona</a>
+  <a href="#p0"><span class="n">P0</span>Handshake</a>
+  <a href="#p1"><span class="n">P1</span>Routing</a>
+  <a href="#p2"><span class="n">P2</span>DNS · SOA</a>
+  <a href="#p3"><span class="n">P3</span>Content negotiation</a>
+  <a href="#p4"><span class="n">P4</span>Mail · token</a>
+  <a href="#p5"><span class="n">P5</span>Token stateless</a>
+  <a href="#vault"><span class="n">🏁</span>The Vault</a>
+  <a href="#trampas"><span class="n">⚠</span>Trampas</a>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="kicker">72.07 · Protocolos de Comunicación</div>
+  <h1>PROTOLAB CTF</h1>
+  <p>Challenge de 5 preguntas sobre <code>http://192.168.123.200</code> (expuesto por el router de
+  servicenet) que termina conectándose al servidor SSH <b>The Vault</b>.</p>
+  <div class="bar">
+    <button class="toggle" id="practiceBtn" type="button"><span class="sw"></span>Modo práctica (respuestas ocultas)</button>
+    <button class="ghost" id="revealAll" type="button">Revelar todo</button>
+  </div>
+</header>
+
+<div class="flow">
+  <a class="step" href="#p0" style="--c:var(--t-http)"><div class="dot">P0</div><div class="lbl">HTTP<br>headers</div></a>
+  <a class="step" href="#p1" style="--c:var(--t-net)"><div class="dot">P1</div><div class="lbl">Routing<br>next-hop</div></a>
+  <a class="step" href="#p2" style="--c:var(--t-dns)"><div class="dot">P2</div><div class="lbl">DNS<br>SOA</div></a>
+  <a class="step" href="#p3" style="--c:var(--t-http)"><div class="dot">P3</div><div class="lbl">HTTP<br>negotiation</div></a>
+  <a class="step" href="#p4" style="--c:var(--t-mail)"><div class="dot">P4</div><div class="lbl">SMTP<br>base64</div></a>
+  <a class="step" href="#p5" style="--c:var(--t-tok)"><div class="dot">P5</div><div class="lbl">Tokens<br>stateless</div></a>
+  <a class="step" href="#vault" style="--c:var(--t-ssh)"><div class="dot">🏁</div><div class="lbl">SSH<br>The Vault</div></a>
+</div>
+
+<!-- ============ INTRO ============ -->
+<section class="card" id="intro" style="--c:var(--accent)">
+  <div class="head">
+    <div class="num">$_</div>
+    <div class="ttl"><h2>Cómo funciona el challenge</h2></div>
+  </div>
+  <div class="goal"><b>Objetivo:</b><span>responder 5 preguntas que expone el servidor HTTP <code>192.168.123.200</code>. Al terminar se habilita el acceso al servidor SSH <b>The Vault</b>, que es la meta final.</span></div>
+
+  <h3>El ciclo, para cada pregunta</h3>
+  <ol class="todo">
+    <li><b>Entrar al contenedor del lab</b> <span class="where">tu máquina</span> (una sola vez; desde ahí se llega a <code>.200</code>)
+      <div class="code"><pre><span class="p">$ </span>ssh -o IPQoS=none -p 2222 user_5@192.168.0.238</pre></div></li>
+    <li><b>Leer la consigna</b> <span class="where">contenedor</span>: <code>GET</code> al recurso de la pregunta, siempre con el header <code>Tiki: Taka</code>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i http://192.168.123.200/&lt;recurso&gt; -H <span class="s">"Tiki: Taka"</span></pre></div></li>
+    <li><b>Resolverla.</b> Cada pregunta toca un protocolo distinto y algunas se resuelven fuera del contenedor: fijate el 📍 de cada paso.</li>
+    <li><b>Mandar la respuesta</b> <span class="where">contenedor</span>: <code>POST &lt;recurso&gt;/response</code> con body JSON <code>{"rta": "..."}</code>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/&lt;recurso&gt;/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "&lt;respuesta&gt;"}'</span></pre></div></li>
+  </ol>
+
+  <h3>Mapa de preguntas</h3>
+  <div class="tablewrap"><table class="map">
+    <tr><th>#</th><th>Recurso</th><th>Qué se pide</th><th>Dónde se resuelve</th></tr>
+    <tr style="--c:var(--t-http)"><td><a href="#p0">P0</a></td><td><code>/start</code></td><td>Confirmar que entendiste la mecánica</td><td>contenedor</td></tr>
+    <tr style="--c:var(--t-net)"><td><a href="#p1">P1</a></td><td><code>/juialepan</code></td><td>Gateway de pampero hacia 1.1.1.1</td><td>pampero</td></tr>
+    <tr style="--c:var(--t-dns)"><td><a href="#p2">P2</a></td><td><code>/ketylanuchi</code></td><td>SERIAL del SOA de <code>www.google.com</code> en el DNS de <code>.200</code></td><td>contenedor</td></tr>
+    <tr style="--c:var(--t-http)"><td><a href="#p3">P3</a></td><td><code>/urururuluru</code></td><td>Contenido en español de <code>/turulu</code></td><td>contenedor</td></tr>
+    <tr style="--c:var(--t-mail)"><td><a href="#p4">P4</a></td><td><code>/papopepoparapapapapiparapopepo</code></td><td>Token que llega por mail</td><td>contenedor + máquina con internet</td></tr>
+    <tr style="--c:var(--t-tok)"><td><a href="#p5">P5</a></td><td><code>/dalequevamooo</code></td><td>Cómo valida el token un server sin estado</td><td>sale del token de P4</td></tr>
+    <tr style="--c:var(--t-ssh)"><td><a href="#vault">🏁</a></td><td><code>192.168.0.238</code></td><td>Encontrar la clave SSH y entrar al vault</td><td>tu máquina</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ P0 ============ -->
+<section class="card" id="p0" style="--c:var(--t-http)">
+  <div class="head">
+    <div class="num">P0</div>
+    <div class="ttl"><h2>Handshake inicial</h2>
+      <div class="sub"><span class="tag">HTTP</span><span class="ep">/start</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="goal"><b>Qué se pide:</b><span>leer la bienvenida y confirmar que entendiste cómo se responde.</span></div>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Pedir la bienvenida <span class="where">contenedor</span>: explica la mecánica del <code>/response</code>.
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i http://192.168.123.200/start -H <span class="s">"Tiki: Taka"</span></pre></div></li>
+    <li>Confirmar <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/start/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "<span class="ans">entendido</span>"}'</span></pre></div></li>
+  </ol>
+  <div class="answer"><span class="k">Respuesta</span><span class="v ans">entendido</span></div>
+  <h3>Concepto</h3>
+  <div class="concept"><p>Headers custom de request y el patrón POST + JSON (<code>Content-Type: application/json</code>).
+  <code>curl -d</code> ya implica POST; <code>-X POST</code> es redundante.</p></div>
+</section>
+
+<!-- ============ P1 ============ -->
+<section class="card" id="p1" style="--c:var(--t-net)">
+  <div class="head">
+    <div class="num">P1</div>
+    <div class="ttl"><h2>Gateway de pampero hacia 1.1.1.1</h2>
+      <div class="sub"><span class="tag">Routing</span><span class="ep">/juialepan</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="q"><b>Pregunta:</b> ¿cuál es el gateway de <code>pampero</code> para llegar a <code>1.1.1.1</code>?</div>
+  <div class="hint"><span>La respuesta depende de la tabla de ruteo <b>de pampero</b>, no de la máquina propia: hay que correr el comando <b>en</b> pampero.</span></div>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Entrar a pampero <span class="where">tu máquina</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>ssh -o IPQoS=none usuario@pampero.itba.edu.ar</pre></div></li>
+    <li>Preguntarle al kernel qué ruta usaría para <code>1.1.1.1</code> <span class="where">pampero</span>. El gateway es lo que aparece después de <code>via</code>.
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>ip route get 1.1.1.1
+<span class="out ans">1.1.1.1 via 10.16.1.254 dev enp1s0 src 10.16.1.100</span></pre></div></li>
+    <li>Responder <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/juialepan/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "<span class="ans">10.16.1.254</span>"}'</span></pre></div></li>
+  </ol>
+  <div class="answer"><span class="k">Respuesta</span><span class="v ans">10.16.1.254</span><span class="note">el <code>via</code> = next-hop</span></div>
+  <h3>Conceptos</h3>
+  <div class="concepts">
+    <div class="concept"><p><code>ip route get &lt;ip&gt;</code> resuelve qué ruta usaría el kernel para ese destino: devuelve
+    <code>via</code> (gateway/next-hop), <code>dev</code> (interfaz) y <code>src</code> (IP origen elegida).</p></div>
+    <div class="concept"><p>Si no hay ruta más específica, matchea la default <code>0.0.0.0/0</code> y su <code>via</code> es la respuesta.</p></div>
+  </div>
+</section>
+
+<!-- ============ P2 ============ -->
+<section class="card" id="p2" style="--c:var(--t-dns)">
+  <div class="head">
+    <div class="num">P2</div>
+    <div class="ttl"><h2>SERIAL del SOA</h2>
+      <div class="sub"><span class="tag">DNS</span><span class="ep">/ketylanuchi</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="q"><b>Pregunta:</b> el router que expone el HTTP también expone un DNS. ¿SERIAL de
+  <code>www.google.com</code> según ese DNS?</div>
+  <div class="hint"><span>"Según ese DNS" = consultarle a <code>192.168.123.200</code> (con <code>@</code> en <code>dig</code>), no al resolver de siempre. Su google.com es de mentira.</span></div>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Pedir el SOA a ese servidor <span class="where">contenedor</span>. El SERIAL es el <b>primer número</b> después de los dos nombres (<code>ns.</code> y <code>admin.</code>).
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>dig @192.168.123.200 www.google.com SOA
+<span class="out ans">www.google.com.  CNAME  google.com.
+google.com.  IN SOA  ns.google.com. admin.google.com. 74757169 69 420 666 69</span></pre></div></li>
+    <li>Responder <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/ketylanuchi/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "<span class="ans">74757169</span>"}'</span></pre></div></li>
+  </ol>
+  <div class="answer"><span class="k">Respuesta</span><span class="v ans">74757169</span></div>
+  <h3>Los 5 números del SOA</h3>
+  <div class="soa">
+    <div class="hl"><b class="ans">74757169</b>SERIAL</div>
+    <div><b class="ans">69</b>REFRESH</div>
+    <div><b class="ans">420</b>RETRY</div>
+    <div><b class="ans">666</b>EXPIRE</div>
+    <div><b class="ans">69</b>MINIMUM</div>
+  </div>
+  <h3>Conceptos</h3>
+  <div class="concepts">
+    <div class="concept"><p>El registro <b>SOA</b> vive en el <b>ápex</b> (raíz) de la zona, no en cada nombre. Como
+    <code>www.google.com</code> es un <b>CNAME</b> a <code>google.com</code>, el SOA aparece bajo <code>google.com.</code></p></div>
+    <div class="concept"><p><b>SERIAL</b> = versión de la zona; el admin lo incrementa en cada cambio. Los esclavos
+    lo comparan con el suyo y, si el del master es mayor, transfieren la zona.</p></div>
+    <div class="concept"><p>Flag <code>aa</code> = <i>authoritative answer</i> (es dueño de la zona, no cacheado).
+    <code>recursion requested but not available</code> = DNS autoritativo puro.</p></div>
+  </div>
+</section>
+
+<!-- ============ P3 ============ -->
+<section class="card" id="p3" style="--c:var(--t-http)">
+  <div class="head">
+    <div class="num">P3</div>
+    <div class="ttl"><h2>Content negotiation</h2>
+      <div class="sub"><span class="tag">HTTP</span><span class="ep">/urururuluru</span><span class="ep">recurso /turulu</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="q"><b>Pregunta:</b> ¿contenido EN ESPAÑOL del recurso <code>/turulu</code>?</div>
+  <div class="hint"><span>No hay que traducir: el servidor ya tiene la versión en español, hay que <i>pedírsela</i> con un header.</span></div>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Pedir el recurso tal cual <span class="where">contenedor</span>: viene en inglés (<code>Content-Language: en</code>) y trae la pista <code>X-Sugerencia</code> → header <b><code>Accept-Language</code></b>.
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i http://192.168.123.200/turulu</pre></div></li>
+    <li>Pedirlo en español <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i http://192.168.123.200/turulu -H <span class="s">"Accept-Language: es"</span>
+<span class="out ans">Content-Language: es
+Hoy aprendimos a negociar contenido sobre HTTP</span></pre></div></li>
+    <li>Responder con el cuerpo <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/urururuluru/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "<span class="ans">Hoy aprendimos a negociar contenido sobre HTTP</span>"}'</span></pre></div></li>
+  </ol>
+  <div class="answer"><span class="k">Respuesta</span><span class="v ans">Hoy aprendimos a negociar contenido sobre HTTP</span></div>
+  <h3>Concepto</h3>
+  <div class="concept"><p><b>Negociación de contenido</b> (RFC 9110 §12). El cliente manda <code>Accept-Language</code>
+  (o <code>Accept</code>, <code>Accept-Encoding</code>…) y el servidor elige la representación; responde
+  <code>Content-Language</code> indicando cuál mandó.</p></div>
+</section>
+
+<!-- ============ P4 ============ -->
+<section class="card" id="p4" style="--c:var(--t-mail)">
+  <div class="head">
+    <div class="num">P4</div>
+    <div class="ttl"><h2>Token por mail</h2>
+      <div class="sub"><span class="tag">SMTP</span><span class="tag" style="--c:var(--t-tok)">base64</span><span class="ep">/papopepoparapapapapiparapopepo</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="q"><b>Pregunta:</b> pedir un mail secreto a <code>POST /maketoken?email=...</code>. El token que trae el mail
+  es la respuesta.</div>
+  <div class="hint"><span>El endpoint manda un mail <b>real</b> por SMTP ("no a cualquier dirección"): necesitás un buzón que exista y que puedas leer. Una casilla temporal de <b>mail.tm</b> sirve, y se maneja toda por API.</span></div>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Crear una casilla temporal en mail.tm <span class="where">máquina con internet</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="c"># dominio disponible</span>
+DOM=$(curl -s https://api.mail.tm/domains | python3 -c <span class="s">'import sys,json;print(json.load(sys.stdin)["hydra:member"][0]["domain"])'</span>)
+ADDR=<span class="s">"algo@$DOM"</span>; PASS=<span class="s">"Passw0rd!"</span>
+<span class="c"># crear cuenta</span>
+curl -s -X POST https://api.mail.tm/accounts -H <span class="s">'Content-Type: application/json'</span> \
+  -d <span class="s">"{\"address\":\"$ADDR\",\"password\":\"$PASS\"}"</span>
+<span class="c"># token JWT de mail.tm (para leer el buzón)</span>
+TOK=$(curl -s -X POST https://api.mail.tm/token -H <span class="s">'Content-Type: application/json'</span> \
+  -d <span class="s">"{\"address\":\"$ADDR\",\"password\":\"$PASS\"}"</span> | python3 -c <span class="s">'import sys,json;print(json.load(sys.stdin)["token"])'</span>)
+echo $ADDR</pre></div></li>
+    <li>Pedirle al lab que mande el mail a esa dirección <span class="where">contenedor</span> (reemplazá <code>$ADDR</code> por la dirección del paso anterior)
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -X POST <span class="s">"http://192.168.123.200/maketoken?email=$ADDR"</span> -H <span class="s">"Tiki: Taka"</span></pre></div></li>
+    <li>Leer el buzón <span class="where">máquina con internet</span>: listar mensajes, tomar el <code>id</code> y abrir el mensaje
+      <div class="code"><span class="lang">bash</span><pre>curl -s https://api.mail.tm/messages -H <span class="s">"Authorization: Bearer $TOK"</span>
+curl -s https://api.mail.tm/messages/&lt;ID&gt; -H <span class="s">"Authorization: Bearer $TOK"</span></pre></div></li>
+    <li><b>Mirar el HTML del mail, no solo el texto:</b> trae pistas en <b>blanco sobre blanco</b> que se usan al final (ver abajo).</li>
+    <li>Responder con el token <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/papopepoparapapapapiparapopepo/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "<span class="ans">cGFjbz1wYWNvO3J0YT1zdHJpbmdfZXF1YWxz</span>"}'</span></pre></div></li>
+  </ol>
+  <div class="answer"><span class="k">Token</span><span class="v ans">cGFjbz1wYWNvO3J0YT1zdHJpbmdfZXF1YWxz</span></div>
+  <p>Que es <b>base64</b> de <code class="ans">paco=paco;rta=string_equals</code> (sirve para P5):</p>
+  <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>echo <span class="s">'cGFjbz1wYWNvO3J0YT1zdHJpbmdfZXF1YWxz'</span> | base64 -d
+<span class="out ans">paco=paco;rta=string_equals</span></pre></div>
+  <h3>Pistas ocultas del mail</h3>
+  <div class="concepts">
+    <div class="concept"><p>Se ven seleccionando el texto o mirando el source: la clave SSH del vault está en un
+    <b>servidor HTTP</b> del vault, en un <b>puerto entre 49000 y 50000</b>.</p></div>
+    <div class="concept"><p>Si el mail no llega, el endpoint ofrecía <code>/maketoken/damearchivoplis?email=...</code>.</p></div>
+  </div>
+</section>
+
+<!-- ============ P5 ============ -->
+<section class="card" id="p5" style="--c:var(--t-tok)">
+  <div class="head">
+    <div class="num">P5</div>
+    <div class="ttl"><h2>Validación de token sin estado</h2>
+      <div class="sub"><span class="tag">Tokens</span><span class="ep">/dalequevamooo</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="q"><b>Pregunta:</b> si el servidor no tiene estado (no recuerda qué tokens emitió), ¿cómo
+  sabe que el token no fue inventado? La respuesta está en el token mismo.</div>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Decodificar el token de P4 (base64) y leer el campo <code>rta</code>: <code class="ans">paco=paco;rta=string_equals</code></li>
+    <li>Responder <span class="where">contenedor</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl -i -X POST http://192.168.123.200/dalequevamooo/response \
+  -H <span class="s">"Tiki: Taka"</span> -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"rta": "<span class="ans">string_equals</span>"}'</span></pre></div></li>
+  </ol>
+  <div class="answer"><span class="k">Respuesta</span><span class="v ans">string_equals</span></div>
+  <h3>Concepto</h3>
+  <div class="concept"><p>Un servidor <b>stateless</b> valida un token sin guardarlo porque el token viene
+  <b>firmado</b> (HMAC / firma): recalcula la firma sobre el payload con su clave secreta y la compara
+  (comparación de strings, idealmente <i>constant-time</i>). Un token forjado no tendría firma válida.
+  (El challenge además dejó la respuesta literal dentro del token como chiste.)</p></div>
+  <div class="bonus"><span><b>Guardala:</b> <code class="ans">string_equals</code> es también la <b>passphrase de la clave SSH</b> del vault.</span></div>
+</section>
+
+<!-- ============ VAULT ============ -->
+<section class="card" id="vault" style="--c:var(--t-ssh)">
+  <div class="head">
+    <div class="num">🏁</div>
+    <div class="ttl"><h2>Objetivo final: The Vault</h2>
+      <div class="sub"><span class="tag">SSH</span><span class="tag" style="--c:var(--t-http)">HTTP</span><span class="ep">192.168.0.238</span></div></div>
+    <button class="reveal" type="button">Ver respuesta</button>
+  </div>
+  <div class="goal"><b>Qué se pide:</b><span>entrar por SSH al vault. Necesitás 4 datos: el <b>puerto HTTP</b> donde está la clave, el <b>usuario</b>, la <b>clave privada</b> y su <b>passphrase</b>.</span></div>
+  <p>Tras P5, el vault pasó a estar en la <b>misma IP del SSH del lab</b> (<code>192.168.0.238</code>), en otros puertos.</p>
+  <h3>Qué hay que hacer</h3>
+  <ol class="todo">
+    <li>Encontrar el servidor HTTP escaneando el rango de la pista del mail (49000–50000) <span class="where">tu máquina</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>nmap -Pn -n --open -p49000-50000 192.168.0.238
+<span class="out ans">49681/tcp open</span></pre></div></li>
+    <li>Abrir el listado de directorio y bajar el usuario y la clave <span class="where">tu máquina</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>curl http://192.168.0.238:<span class="ans">49681</span>/                                  <span class="c"># listado</span>
+<span class="p">$ </span>curl http://192.168.0.238:<span class="ans">49681</span>/IMPORTANTE_NOMBRE_DE_USUARIO.txt  <span class="c"># usuario: <span class="ans">bububu</span></span>
+<span class="p">$ </span>curl -s http://192.168.0.238:<span class="ans">49681</span>/supersecretkey -o ~/vaultkey
+<span class="p">$ </span>chmod 600 ~/vaultkey   <span class="c"># sin esto ssh rechaza la clave</span></pre></div></li>
+    <li>Conectarse al SSH del vault (puerto <b>12222</b>). Cuando pida la passphrase: <code class="ans">string_equals</code> <span class="where">tu máquina</span>
+      <div class="code"><span class="lang">bash</span><pre><span class="p">$ </span>ssh -o IPQoS=none -i ~/vaultkey -p 12222 <span class="ans">bububu</span>@192.168.0.238</pre></div></li>
+  </ol>
+  <div class="win">█▀▀ ▄▀█ █▄ █ ▄▀█ █▀ ▀█▀ █▀▀ █
+█▄█ █▀█ █ ▀█ █▀█ ▄█  █  ██▄ ▄</div>
+  <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:-4px">Si ves un TUI con <b>"GANASTE!"</b> en letras de bloque, terminaste. Se cierra con <kbd>q</kbd>, <kbd>Esc</kbd> o <kbd>Ctrl</kbd>+<kbd>C</kbd>.</p>
+  <h3>Conceptos / detalles</h3>
+  <div class="concepts">
+    <div class="concept"><p><code>python -m http.server</code> (el <code>Server: SimpleHTTP/... Python/...</code> de la respuesta)
+    arma un listado de directorio navegable → nunca dejes claves ahí.</p></div>
+    <div class="concept"><p>La <b>passphrase</b> cifra la clave privada SSH en reposo (<code>aes256-ctr</code> + <code>bcrypt</code>
+    en el header del archivo); SSH la pide al cargar la clave, es distinta del password de login.</p></div>
+    <div class="concept"><p>El programa del vault es un TUI en Rust que paniqueaba con <code>cannot sample empty range</code>
+    cuando la terminal tenía tamaño 0×0 (al pasarle un PTY sin <code>winsize</code>). Con una terminal real (o un PTY con
+    <code>TIOCSWINSZ</code> seteado) renderiza bien.</p></div>
+  </div>
+</section>
+
+<!-- ============ TRAMPAS ============ -->
+<section class="card warn-card" id="trampas" style="--c:var(--warn)">
+  <div class="head">
+    <div class="num">⚠</div>
+    <div class="ttl"><h2>Trampas de entorno</h2>
+      <div class="sub"><span class="tag">no son parte del challenge, pero aparecieron</span></div></div>
+  </div>
+  <div class="q"><b>SSH que da "timeout" pero <code>nc</code> conecta:</b> el cliente OpenSSH 10 marca los paquetes con
+  <b>DSCP</b> (<code>IPQoS</code>) y algún equipo de red los descarta.</div>
+  <p>Fix: <code>-o IPQoS=none</code>, o en <code>~/.ssh/config</code>:</p>
+  <div class="code"><span class="lang">ssh_config</span><pre>Host *
+  IPQoS none</pre></div>
+</section>
+
+<p class="foot">Generado desde <code>ctf-protolab-resumen.md</code></p>
+</main>
+</div>
+
+<script>
+const body = document.body;
+const KEY = 'protolab-practice';
+if (localStorage.getItem(KEY) === '0') body.classList.remove('practice');
+
+document.getElementById('practiceBtn').onclick = () => {
+  body.classList.toggle('practice');
+  document.querySelectorAll('.ans.shown').forEach(e => e.classList.remove('shown'));
+  localStorage.setItem(KEY, body.classList.contains('practice') ? '1' : '0');
+};
+document.getElementById('revealAll').onclick = () =>
+  document.querySelectorAll('.ans').forEach(e => e.classList.add('shown'));
+
+// click en un spoiler lo revela; "Ver respuesta" revela todos los de la tarjeta
+document.addEventListener('click', e => {
+  const a = e.target.closest('.ans');
+  if (a && body.classList.contains('practice') && !a.classList.contains('shown')) {
+    a.classList.add('shown'); e.preventDefault(); return;
+  }
+  const r = e.target.closest('.reveal');
+  if (r) r.closest('.card').querySelectorAll('.ans').forEach(x => x.classList.add('shown'));
+});
+
+// botón copiar: copia solo comandos (sin prompt ni salida)
+document.querySelectorAll('.code').forEach(box => {
+  const btn = document.createElement('button');
+  btn.className = 'copy'; btn.type = 'button'; btn.textContent = 'Copiar';
+  btn.onclick = async () => {
+    const pre = box.querySelector('pre').cloneNode(true);
+    pre.querySelectorAll('.out, .p').forEach(n => n.remove());
+    const txt = pre.textContent.split('\n').filter(l => l.trim()).join('\n');
+    try { await navigator.clipboard.writeText(txt); } catch {
+      const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t);
+      t.select(); document.execCommand('copy'); t.remove();
+    }
+    btn.textContent = '✓ Copiado'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('ok'); }, 1300);
+  };
+  box.appendChild(btn);
+});
+
+// resaltar la sección activa en el índice
+const links = [...document.querySelectorAll('.toc a')];
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    links.forEach(l => l.classList.toggle('on', l.getAttribute('href') === '#' + en.target.id));
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('main section[id]').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

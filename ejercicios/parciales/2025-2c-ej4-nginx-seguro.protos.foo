@@ -1,0 +1,32 @@
+# ============================================================
+# Parcial 2025 2C - Ej IV: https://seguro.protos.foo sirve lo de http://parcial.protos.foo (sin cambiar la URL)
+# /etc/nginx/sites-available/seguro  +  symlink en sites-enabled
+# Certificado (opción A, openssl autofirmado CON SAN):
+#   sudo openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+#        -keyout /etc/ssl/private/seguro.key -out /etc/ssl/certs/seguro.crt \
+#        -subj "/CN=seguro.protos.foo" -addext "subjectAltName=DNS:seguro.protos.foo"
+#   sudo cp /etc/ssl/certs/seguro.crt /usr/local/share/ca-certificates/seguro.crt   # extensión .crt obligatoria
+#   sudo update-ca-certificates                                                      # "1 added"
+# Certificado (opción B, mkcert si la CA ya está instalada): mkcert seguro.protos.foo
+# /etc/hosts:  127.0.0.1  seguro.protos.foo
+# Verificar:   curl https://seguro.protos.foo        (SIN -k)
+# Probado en la VM el 26/10/2026 (parcial.protos.foo simulado con otro server de nginx).
+# ============================================================
+server {
+    listen 443 ssl;
+    server_name seguro.protos.foo;
+
+    ssl_certificate     /etc/ssl/certs/seguro.crt;     # público
+    ssl_certificate_key /etc/ssl/private/seguro.key;   # privado
+
+    location / {
+        proxy_pass http://parcial.protos.foo;          # TLS termina acá; al backend va HTTP plano
+    }
+}
+
+# Opcional (buena práctica): que http://seguro.protos.foo redirija a https
+server {
+    listen 80;
+    server_name seguro.protos.foo;
+    return 301 https://$host$request_uri;
+}

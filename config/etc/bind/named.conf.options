@@ -1,0 +1,45 @@
+// ============================================================
+// /etc/bind/named.conf.options  -  opciones globales de named (bind9)
+// Guía 3: E50-E54
+// Después de editar:   sudo named-checkconf && sudo systemctl reload named
+// ============================================================
+
+options {
+    // Carpeta de trabajo de named (cache, zonas secundarias, etc.)
+    directory "/var/cache/bind";
+
+    // En qué IPs/puertos escucha (por defecto: todas las interfaces, puerto 53 UDP y TCP)
+    listen-on    { any; };
+    listen-on-v6 { any; };
+
+    // Quién puede hacerle consultas a este servidor
+    allow-query     { localhost; localnets; };
+
+    // Recursión: resolver nombres de OTRAS zonas (google.com, etc.) para los clientes.
+    // Un servidor sólo autoritativo pondría  recursion no;
+    recursion yes;
+    allow-recursion { localhost; localnets; };
+
+    // ---------------------------------------------------------
+    // E54 - FORWARDERS
+    // Sin forwarders (como está ahora): named resuelve solo, de forma
+    // ITERATIVA, empezando por los root servers (named.conf.root-hints):
+    //    .  ->  com.  ->  google.com.   (muchos paquetes salientes)
+    // Con forwarders: named le pasa la consulta RECURSIVA a otro
+    // servidor (ej. 8.8.8.8) y espera la respuesta final (1 paquete
+    // de ida y 1 de vuelta por consulta).
+    //
+    // Para activarlos, descomentar estas 2 líneas y recargar:
+    // forwarders { 8.8.8.8; 1.1.1.1; };
+    // forward only;     // only  = si los forwarders no responden -> SERVFAIL
+    //                   // first = (default) prueba forwarders y si fallan hace recursión él mismo
+    //
+    // Para ver la diferencia (en otra terminal):
+    //    sudo rndc flush            # vaciar el cache de named
+    //    sudo tcpdump -ni any port 53
+    //    dig @127.0.0.1 wikipedia.org
+    // ---------------------------------------------------------
+
+    // Validación DNSSEC de las respuestas recursivas
+    dnssec-validation auto;
+};

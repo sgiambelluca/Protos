@@ -1,0 +1,51 @@
+# ============================================================
+# Guía 2 - E39: sitio "foo" en MODO PROXY REVERSO
+#   foo  ->  backend Python (python3 -m http.server) en 127.0.0.1:8080
+#
+# El backend corre como servicio:  protos-python-http.service
+#   (sirve /srv/protos-python/index.html = "Hola mundo")
+#
+# Activar este modo:   ~/Protos/scripts/foo-modo.sh proxy
+# Volver al estático:  ~/Protos/scripts/foo-modo.sh estatico
+# (no pueden estar los dos habilitados: mismo server_name)
+#
+# "A gateway (a.k.a. reverse proxy) is an intermediary that acts as an
+#  origin server for the outbound connection..."  - RFC 7230 2.3
+# ============================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name foo;
+
+    include snippets/protos-gzip.conf;    # E40: nginx comprime lo que devuelve Python
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;            # a dónde reenviar
+
+        # Headers que nginx agrega al pedido hacia el backend:
+        proxy_set_header Host              $host;                       # el Host original (foo)
+        proxy_set_header X-Real-IP         $remote_addr;                # IP real del cliente
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;  # cadena de IPs
+        proxy_set_header X-Forwarded-Proto $scheme;                     # http o https
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name foo;
+
+    ssl_certificate     /etc/nginx/ssl/foo.pem;
+    ssl_certificate_key /etc/nginx/ssl/foo-key.pem;
+
+    include snippets/protos-gzip.conf;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;            # TLS termina en nginx, al backend va HTTP plano
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

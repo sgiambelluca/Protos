@@ -1,0 +1,51 @@
+# ============================================================
+# Guía 2 - sitio "foo"  (MODO ESTÁTICO)
+#   E36: virtual host por nombre -> "Bienvenido a Foo"
+#   E40: compresión gzip (snippets/protos-gzip.conf)
+#   E41: HTTPS con certificado generado por mkcert
+#
+# El modo PROXY (E39: foo -> Python en 127.0.0.1:8080) está en
+# sites-available/foo-proxy. Para cambiar de modo:
+#     ~/Protos/scripts/foo-modo.sh proxy      (o: estatico)
+#
+# Probar sin que la máquina resuelva "foo" (E37):
+#     curl -H 'Host: foo' http://127.0.0.1/
+#     printf 'GET / HTTP/1.1\r\nHost: foo\r\n\r\n' | nc 127.0.0.1 80
+# ============================================================
+
+# ---------- HTTP (puerto 80) ----------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name foo;               # se usa este bloque si el header "Host:" es foo
+
+    root  /var/www/foo;            # carpeta con los archivos del sitio
+    index index.html;              # archivo por defecto al pedir un directorio
+
+    include snippets/protos-gzip.conf;   # E40
+
+    location / {
+        # probar el archivo pedido, si no un directorio, si no 404
+        try_files $uri $uri/ =404;
+    }
+}
+
+# ---------- HTTPS (puerto 443) - E41 ----------
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name foo;
+
+    # Certificado generado con:  mkcert foo   (CA local instalada con mkcert -install)
+    ssl_certificate     /etc/nginx/ssl/foo.pem;       # parte PÚBLICA  (certificado, se manda al cliente)
+    ssl_certificate_key /etc/nginx/ssl/foo-key.pem;   # parte PRIVADA  (clave, NUNCA sale del server, permisos 600)
+
+    root  /var/www/foo;
+    index index.html;
+
+    include snippets/protos-gzip.conf;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

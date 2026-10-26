@@ -1,0 +1,17 @@
+# ============================================================
+# Ejercicios varios (repo) - Ej 5: "hola, yo!" por 127.0.0.1 y "vos no sos yo" por la IP de la máquina
+# Se distingue por la IP DESTINO de la conexión (listen IP:puerto), no por el header Host.
+# Probado el 26/10 (con 10.0.2.15, la IP de esta VM).
+#
+# EFECTO COLATERAL (el repo no lo dice): un listen con IP específica "se lleva" TODOS los pedidos a esa
+# IP:puerto. Mientras esté activo, http://foo/ y http://bar/ (que resuelven a 127.0.0.1) también
+# responden "hola, yo!". Por eso este archivo NO está habilitado en la VM.
+# ============================================================
+server {
+    listen 127.0.0.1:80;
+    location / { return 200 "hola, yo!\n"; }
+}
+server {
+    listen 10.0.2.15:80;                      # la IPv4 de la máquina (ip -4 addr)
+    location / { return 200 "vos no sos yo\n"; }
+}

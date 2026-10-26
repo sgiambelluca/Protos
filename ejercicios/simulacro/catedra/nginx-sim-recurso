@@ -1,0 +1,28 @@
+# Simulacro (lo instala ~/Protos/scripts/simulacro.sh montar): hace de http://recurso.protos.foo:8080/data/ del Ej 3.
+#  - pide Basic auth: admin / secret123 (lo que hay adentro del header filtrado del enunciado)
+#  - negociación de contenido: según Accept (text/plain o HTML) y Accept-Language (es o en)
+# Escucha en 127.0.0.2:8080 porque 127.0.0.1:8080 ya lo usa el backend Python de E39.
+# En /etc/hosts: 127.0.0.2 recurso.protos.foo
+map $http_accept $sim_tipo {
+    default        html;
+    ~*text/plain   txt;
+}
+map $http_accept_language $sim_idioma {
+    default  en;
+    ~*^es    es;            # "es", "es-AR,es;q=0.9", ... (el PRIMER idioma de la lista)
+}
+
+server {
+    listen 127.0.0.2:8080;
+    server_name recurso.protos.foo;
+    root /srv/simulacro/recurso;
+    charset utf-8;
+
+    location /data/ {
+        auth_basic           "Simulacro: recurso protegido";
+        auth_basic_user_file /etc/nginx/simulacro.htpasswd;     # lo genera montar con openssl passwd -apr1
+        add_header Vary "Accept, Accept-Language" always;
+        add_header Content-Language $sim_idioma;                # qué idioma eligió (como el /turulu del integrador)
+        try_files /data/$sim_idioma.$sim_tipo =404;             # es.txt, es.html, en.txt, en.html
+    }
+}

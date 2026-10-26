@@ -1,0 +1,27 @@
+# ============================================================
+# Guía 3 - E48: si se PERMITE que cambie la URL del browser
+#   -> alcanza con una REDIRECCIÓN HTTP (3xx + header Location)
+#
+#   http://alt.foo.pdc.lab/algo  ->  302  Location: http://protos.foo/algo
+#
+# El browser hace un segundo pedido, ahora directo a protos.foo,
+# y la barra de direcciones muestra protos.foo.
+#   301/308 = permanente (el browser lo cachea)
+#   302/307 = temporal   (307/308 conservan el método, ej. POST)
+#
+# alt.foo.pdc.lab es un CNAME a foo.pdc.lab en la zona de bind9.
+# Tiene que ser un nombre DENTRO de la zona foo.pdc.lab: un nombre como
+# "foo-alt.pdc.lab" es HERMANO de foo.pdc.lab (cuelga de pdc.lab), así que
+# poner "foo-alt" en la zona crea foo-alt.foo.pdc.lab y no lo que uno quería.
+# Probar:   curl -i http://alt.foo.pdc.lab/
+# ============================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name alt.foo.pdc.lab;
+
+    location / {
+        return 302 http://protos.foo$request_uri;
+    }
+}

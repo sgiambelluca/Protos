@@ -1,0 +1,11 @@
+HELO ubuntua.foo.pdc.lab
+MAIL FROM:<sgiambelluca@pdc.lab>
+RCPT TO:<sgiambelluca@foo.pdc.lab>
+DATA
+From: Alguien <alguien@example.org>
+To: pepe@example.org
+Subject: PDC Ejercicio 58
+
+hola mundo
+.
+QUIT

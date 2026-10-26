@@ -1,0 +1,32 @@
+; ============================================================
+; Parcial 2025 2C - Ej III: zona it.itba.edu.ar CORREGIDA
+; Validar:  named-checkzone it.itba.edu.ar 2025-2c-ej3-zona-CORREGIDA.db
+; Errores del original marcados con [Ex] (ver apuntes/14-resoluciones-parciales.md)
+; ============================================================
+$TTL 1h                       ; [E7] antes 604800 (1 semana): los resolvers cacheaban 1 semana
+$ORIGIN it.itba.edu.ar.       ; (no era error: por defecto el origen es el nombre de la zona, pero es más claro)
+
+@ IN SOA ns1.it.itba.edu.ar. admin.it.itba.edu.ar. (   ; [E1] el mail va con "." no con "@"
+        2025060501      ; Serial    [E5] SUBIRLO (antes 2025060500) para que los secundarios pidan la zona
+        1h              ; Refresh   [E6] antes 604800 (1 semana): los secundarios tardaban una semana en enterarse
+        15m             ; Retry     antes 86400 (1 día)
+        2419200         ; Expire    (4 semanas, está bien)
+        5m              ; Negative Cache TTL  [E6] antes 604800: un NXDOMAIN quedaba cacheado 1 semana
+        )
+
+; Name Servers
+@       IN NS ns1.it.itba.edu.ar.
+
+; Mail
+@       IN MX 10 mail
+
+; Hosts
+ns1     IN A 192.168.70.1     ; [E2] decía "ns1.it.itba.edu.ar" SIN punto final -> ns1.it.itba.edu.ar.it.itba.edu.ar.
+                              ;      y el NS quedaba sin dirección: "NS ... has no address records" -> la zona NO cargaba
+pampero IN A 192.168.70.10
+mail    IN A 192.168.70.10    ; [E4] el MX apuntaba a "mail", que no existía (el MX no puede apuntar a un CNAME
+                              ;      como "correo"; se agrega un A. La IP es un supuesto: la de pampero)
+
+; Aliases
+www     IN CNAME pampero      ; [E3] decía "IN A pampero": un A lleva una IPv4 -> "bad dotted quad"
+correo  IN CNAME pampero

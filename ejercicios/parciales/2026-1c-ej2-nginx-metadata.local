@@ -1,0 +1,18 @@
+# ============================================================
+# Parcial 2026 1C - Ej 2 (consigna reconstruida): http://metadata.local -> http://metadata.protos.foo
+#   agregando los headers  Metadata: true  y  Accept: application/json  en cada pedido al backend
+# /etc/nginx/sites-available/metadata.local + symlink;  /etc/hosts: 127.0.0.1 metadata.local
+# Verificar:  curl http://metadata.local
+# Probado en la VM con un backend que muestra los headers recibidos: llegan Metadata: true y
+# Accept: application/json (proxy_set_header REEMPLAZA el Accept que manda el cliente).
+# ============================================================
+server {
+    listen 80;
+    server_name metadata.local;
+
+    location / {
+        proxy_pass http://metadata.protos.foo;
+        proxy_set_header Metadata true;
+        proxy_set_header Accept application/json;
+    }
+}

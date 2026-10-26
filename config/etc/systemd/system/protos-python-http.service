@@ -1,0 +1,18 @@
+# Guía 2 - E39: backend HTTP sencillo para el proxy reverso de nginx.
+# Equivale a:   cd /srv/protos-python && python3 -m http.server 8080
+# (el enunciado usa /tmp/protos, pero /tmp se borra al reiniciar)
+#
+#   sudo systemctl status  protos-python-http
+#   sudo systemctl stop    protos-python-http    # para ver el 502 Bad Gateway de nginx
+#   curl http://127.0.0.1:8080/
+[Unit]
+Description=Protos E39 - backend HTTP simple con Python (127.0.0.1:8080)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 -m http.server 8080 --bind 127.0.0.1 --directory /srv/protos-python
+User=www-data
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

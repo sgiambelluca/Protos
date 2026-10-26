@@ -1,0 +1,27 @@
+; ============================================================
+; Guía 3 - E50: zona INVERSA  2.0.10.in-addr.arpa  (red 10.0.2.0/24)
+; Archivo:   /etc/bind/zones/db.10.0.2
+; Chequear:  sudo named-checkzone 2.0.10.in-addr.arpa /etc/bind/zones/db.10.0.2
+; Probar:    dig @127.0.0.1 -x 10.0.2.15      (o: host 10.0.2.15 127.0.0.1)
+;
+; Cada registro PTR usa como nombre el ÚLTIMO octeto de la IP:
+;   15  ->  15.2.0.10.in-addr.arpa.  ->  ubuntua.foo.pdc.lab.
+; Acá los nombres de destino SÍ o SÍ llevan el punto final
+; (si no, quedaría ubuntua.foo.pdc.lab.2.0.10.in-addr.arpa.)
+; ============================================================
+$TTL 1d
+$ORIGIN 2.0.10.in-addr.arpa.
+
+@      IN  SOA  ns1.foo.pdc.lab. sgiambelluca.itba.edu.ar. (
+                2026102601 ; serial
+                1h         ; refresh
+                15m        ; retry
+                1w         ; expire
+                30m )      ; negative TTL
+
+@      IN  NS   ns1.foo.pdc.lab.
+
+2      IN  PTR  gateway.foo.pdc.lab.
+3      IN  PTR  dns-nat.foo.pdc.lab.
+15     IN  PTR  ubuntua.foo.pdc.lab.     ; una IP puede tener un solo PTR "canónico"
+16     IN  PTR  mail2.foo.pdc.lab.

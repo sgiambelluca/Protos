@@ -1,0 +1,17 @@
+EHLO ubuntua
+MAIL FROM:<sgiambelluca@pdc.lab>
+RCPT TO:<sgiambelluca@pdc.lab>
+DATA
+Date: Mon, 26 Oct 2026 18:00:00 -0300
+Message-ID: <20261026180000.6402@itba.edu.ar>
+From: Nombre Apellido <usuario@itba.edu.ar>
+To: <6402@mail.sebikul.com>
+Subject: =?UTF-8?B?wqFCdWVub3MgZMOtYXMh?=
+X-Parcial: 2026/2
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+wqFIb2xhIG11bmRvIQ0K
+.
+QUIT

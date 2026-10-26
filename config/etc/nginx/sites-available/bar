@@ -1,0 +1,22 @@
+# ============================================================
+# Guía 2 - sitio "bar"
+#   E36: virtual host por nombre -> "Bienvenido a Bar"
+#   E40: compresión gzip
+#
+# Probar:  curl -H 'Host: bar' http://127.0.0.1/
+# ============================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name bar;
+
+    root  /var/www/bar;
+    index index.html;
+
+    include snippets/protos-gzip.conf;   # E40
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

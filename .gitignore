@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Compilados y salidas de la Guía 1 (se generan con make / medir.sh en la VM)
+ejercicios/g01-intro/copy
+ejercicios/g01-intro/logwrite
+ejercicios/g01-intro/logread
+ejercicios/g01-intro/mensajes.log
+*.class
+
+# Copia de /etc de la VM antes de los cambios: sólo sirve en esa VM
+backups-originales/
+
+# Claves y certificados: nunca al repo
+*.key
+*-key.pem
+
+# Copias textuales de material de terceros (rodrihern/Protos-ITBA no tiene licencia):
+# quedan en la copia local, pero no se publican. Ver "Material de terceros" en el README.
+referencias/Cheatsheet_lab_ip.pdf
+recu/Ejercicio_integrador.md
+recu/attachments/

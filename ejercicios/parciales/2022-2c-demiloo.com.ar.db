@@ -1,0 +1,23 @@
+; ============================================================
+; Parcial 2022 2C: zona demiloo.com.ar (consigna tomada de ejercicios-practicos.md)
+; Validar:  named-checkzone demiloo.com.ar 2022-2c-demiloo.com.ar.db
+; IPs y MX DE EJEMPLO. En el parcial salen de:
+;   dig +short foo.leak.com.ar          (la IP del A del apex; si da varias, un A por cada una)
+;   dig +short MX proto.leak.com.ar     (los MX con sus preferencias)
+; Al 26/10/2026 esos dos nombres ya no resuelven.
+; ============================================================
+$TTL 1d
+@       IN SOA ns.demiloo.com.ar. demiloo.leak.com.ar. (   ; contacto demiloo@leak.com.ar: "." en vez de "@"
+        2022110101      ; Serial
+        1h              ; Refresh
+        15m             ; Retry
+        1w              ; Expire
+        5m )            ; Negative Cache TTL
+
+@           IN NS    ns.demiloo.com.ar.
+ns          IN A     192.0.2.53              ; la IP de TU servidor (somos la autoridad)
+
+@       1h  IN A     203.0.113.10            ; = IP de foo.leak.com.ar, con TTL de 1 hora
+www     2w  IN CNAME @                       ; alias del apex, TTL de 2 semanas (CNAME HACIA el apex sí vale)
+@       1w  IN MX    10 mx1.example.net.     ; = los MX de proto.leak.com.ar con las MISMAS preferencias:
+@       1w  IN MX    20 mx2.example.net.     ;   el "orden" lo da el número, no el orden de las líneas. TTL 1 semana

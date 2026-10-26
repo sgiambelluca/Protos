@@ -1,0 +1,9 @@
+# Simulacro (lo instala ~/Protos/scripts/simulacro.sh montar): hace de http://interno.protos.foo,
+# el servidor "HTTP inseguro" de la cátedra del Ej 2. En /etc/hosts: 127.0.0.1 interno.protos.foo
+server {
+    listen 80;
+    server_name interno.protos.foo;
+    default_type text/plain;
+    charset utf-8;
+    return 200 "Contenido de interno.protos.foo (servidor HTTP inseguro de la cátedra)\n";
+}

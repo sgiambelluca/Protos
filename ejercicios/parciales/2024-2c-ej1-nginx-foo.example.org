@@ -1,0 +1,22 @@
+# ============================================================
+# Parcial 2024 2C - Ej I: http://foo.example.org/ sirve http://protos.sebikul.com/ (sin cambiar la URL)
+#                         y se conserva el header X-Parcial-Protos
+# /etc/nginx/sites-available/foo.example.org  +  symlink en sites-enabled
+# /etc/hosts:  127.0.0.1  foo.example.org
+# Verificar:   curl http://foo.example.org/      (sin opciones, como pide la consigna)
+# ============================================================
+server {
+    listen 80;
+    server_name foo.example.org;
+
+    location / {                                   # "/" sin "=": cualquier recurso de protos.sebikul.com
+        proxy_pass http://protos.sebikul.com;      # SIN URI final: la ruta pasa tal cual (/x/y -> /x/y)
+        # NO poner "proxy_set_header Host $host;": protos.sebikul.com necesita "Host: protos.sebikul.com"
+        # (es el default de nginx = $proxy_host).
+
+        # X-Parcial-Protos: nginx YA reenvía por defecto todos los headers del cliente al backend
+        # y todos los headers de la respuesta al cliente (probado en la VM el 26/10/2026).
+        # Esta línea es redundante, pero no está mal y deja explícita la intención:
+        proxy_set_header X-Parcial-Protos $http_x_parcial_protos;
+    }
+}

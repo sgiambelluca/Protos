@@ -1,0 +1,27 @@
+# ============================================================
+# Ejercicios varios (repo) - Ej 3: "puerro" proxy reverso a https://protos.foo/ (cualquier ruta)
+# /etc/hosts del CLIENTE (y del server):  127.0.0.1 puerro hola
+#   OJO: NO poner "127.0.0.1 protos.foo" (como dice el repo): nginx se haría proxy a sí mismo.
+# Probado el 26/10 con https://example.com en lugar de protos.foo (que está caído):
+#   sin proxy_ssl_server_name -> 502 (handshake failure: el server HTTPS exige SNI)
+#   con proxy_ssl_server_name on -> 200
+# ============================================================
+server {
+    listen 80;
+    server_name puerro;
+    location / {
+        proxy_pass https://protos.foo;        # sin URI: puerro/xyz/... -> https://protos.foo/xyz/...
+        proxy_ssl_server_name on;             # mandar SNI en el handshake TLS hacia el backend (si no: 502)
+        # Host hacia el backend = protos.foo por defecto ($proxy_host): no hace falta proxy_set_header Host
+    }
+}
+
+server {
+    listen 80;
+    server_name hola;
+    root /var/www/hola;                       # /var/www/hola/index.html con el mensaje de bienvenida
+    index index.html;
+    location / { try_files $uri $uri/ =404; }
+}
+
+# "cualquier otro sitio muestra what?" -> un default_server (en esta VM ya existe: sites-available/what)

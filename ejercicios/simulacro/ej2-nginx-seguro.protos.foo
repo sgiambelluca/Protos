@@ -1,0 +1,43 @@
+# ============================================================
+# Simulacro - Ej 2: https://seguro.protos.foo sirve lo de http://interno.protos.foo (sin cambiar la URL)
+# /etc/nginx/sites-available/seguro  +  symlink en sites-enabled
+# Es el mismo ejercicio que 2025 2C Ej IV (../parciales/2025-2c-ej4-nginx-seguro.protos.foo) con otro backend.
+#
+# 1) Nombres. interno.protos.foo tiene que resolver ANTES del nginx -t ("host not found in upstream"):
+#      getent hosts interno.protos.foo      (en la VM lo agrega "simulacro.sh montar"; en el parcial, DNS del lab o /etc/hosts)
+#      echo "127.0.0.1 seguro.protos.foo" | sudo tee -a /etc/hosts
+# 2) Certificado autofirmado CON SAN (Firefox y Chrome exigen SAN; curl acepta también sólo CN):
+#      sudo openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+#           -keyout /etc/ssl/private/seguro.key -out /etc/ssl/certs/seguro.crt \
+#           -subj "/CN=seguro.protos.foo" -addext "subjectAltName=DNS:seguro.protos.foo"
+# 3) Confiable para el SISTEMA (lo que usa curl):
+#      sudo cp /etc/ssl/certs/seguro.crt /usr/local/share/ca-certificates/seguro.crt   # extensión .crt obligatoria
+#      sudo update-ca-certificates                                                      # "1 added"
+#    Los NAVEGADORES no usan ese almacén. Para que también ande en Firefox, usar mkcert en vez de openssl
+#    (su CA ya está instalada en el sistema y en el Firefox de esta VM):
+#      mkcert seguro.protos.foo        # genera seguro.protos.foo.pem y seguro.protos.foo-key.pem (SIN sudo)
+#      sudo cp seguro.protos.foo.pem /etc/ssl/certs/seguro.crt
+#      sudo cp seguro.protos.foo-key.pem /etc/ssl/private/seguro.key
+# 4) sudo ln -s /etc/nginx/sites-available/seguro /etc/nginx/sites-enabled/
+#    sudo nginx -t && sudo systemctl reload nginx
+# Verificar:  curl https://seguro.protos.foo        (SIN -k)   ->  "Contenido de interno.protos.foo ..."
+# ============================================================
+server {
+    listen 443 ssl;
+    server_name seguro.protos.foo;
+
+    ssl_certificate     /etc/ssl/certs/seguro.crt;     # público
+    ssl_certificate_key /etc/ssl/private/seguro.key;   # privado
+
+    location / {
+        proxy_pass http://interno.protos.foo;          # proxy, NO redirect: la URL del navegador no cambia
+        # Host: ya va "interno.protos.foo" por defecto ($proxy_host): no hace falta proxy_set_header Host
+    }
+}
+
+# Opcional: que http://seguro.protos.foo redirija a https (igual .foo está en la lista de precarga HSTS)
+server {
+    listen 80;
+    server_name seguro.protos.foo;
+    return 301 https://$host$request_uri;
+}

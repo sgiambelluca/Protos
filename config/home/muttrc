@@ -1,0 +1,35 @@
+# ============================================================
+# ~/.muttrc  -  Guía 4 E59/E60: mutt como MUA contra el servidor LOCAL
+#   envío:   SMTP directo a postfix (127.0.0.1:25)
+#   lectura: el Maildir local (~/Maildir), o por POP3 (dovecot) con la tecla G
+#
+# Uso:
+#   mutt                                  -> abre la bandeja (~/Maildir)
+#   G                                     -> trae mails por POP3 (pide la contraseña de la VM)
+#   echo "hólá múndó ñ" | mutt -s "E59" -a imagen.jpg -- sgiambelluca@localhost
+#
+# Para ver la transacción SMTP/POP3 del MUA (E60): Wireshark en la interfaz "lo",
+# filtro:  smtp || pop
+# ============================================================
+
+set realname      = "sgiambelluca"
+set from          = "sgiambelluca@pdc.lab"
+set use_from      = yes
+set send_charset  = "utf-8"           # ó á ñ -> MIME con charset=utf-8 (quoted-printable o base64)
+set edit_headers  = yes               # permite ver/editar From:, To:, etc. en el editor
+
+# ---- Envío: SMTP a postfix ----
+set smtp_url      = "smtp://127.0.0.1:25/"
+
+# ---- Lectura: Maildir local ----
+set mbox_type     = Maildir
+set folder        = "~/Maildir"
+set spoolfile     = "~/Maildir"
+set record        = "+.Sent"          # copia de lo enviado
+set postponed     = "+.Drafts"        # borradores (E70: "guardar como draft" -> tecla p)
+
+# ---- Lectura por POP3 (dovecot, puerto 110) ----
+set pop_host      = "pop://sgiambelluca@127.0.0.1:110/"
+set pop_delete    = no                # no borrar del server al traer
+set ssl_starttls  = no                # en localhost no hace falta TLS
+unset ssl_force_tls                   # mutt 2.x lo trae activado: sin esto falla con el certificado "snakeoil" de postfix

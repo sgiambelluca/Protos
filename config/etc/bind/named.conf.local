@@ -1,0 +1,35 @@
+//
+// /etc/bind/named.conf.local  -  zonas propias (lo incluye named.conf)
+// Después de editar:   sudo named-checkconf -z && sudo systemctl reload named
+//
+
+// ---------------- Zonas hechas en la clase práctica ----------------
+// CORREGIDO 26/10: el path decía "/etc/bind/bind/zones/..." (carpeta que
+// no existe) y por eso named NO cargaba ninguna de las dos zonas:
+//   "loading from master file ... failed: file not found"
+zone "pepito.com" {
+	type master;
+	file "/etc/bind/zones/db.pepito.com.local";
+};
+
+zone "cachito.com" {
+	type master;
+	file "/etc/bind/zones/db.cachito.com.local";
+};
+
+// ---------------- Guía 3 - E50: zona del enunciado ----------------
+// Zona DIRECTA (forward mapping): nombre -> IP
+zone "foo.pdc.lab" {
+	type master;                          // = "primary" (nombre nuevo). El secundario sería "slave"/"secondary"
+	file "/etc/bind/zones/db.foo.pdc.lab";
+	allow-transfer { localhost; };        // AXFR sólo desde esta máquina:  dig @127.0.0.1 foo.pdc.lab AXFR
+};
+
+// Zona INVERSA (reverse mapping): IP -> nombre (registros PTR)
+// Red 10.0.2.0/24 (NAT de VirtualBox) -> se invierten los octetos de la parte de red
+// y se agrega .in-addr.arpa   =>   2.0.10.in-addr.arpa
+zone "2.0.10.in-addr.arpa" {
+	type master;
+	file "/etc/bind/zones/db.10.0.2";
+	allow-transfer { localhost; };
+};

@@ -1,0 +1,58 @@
+; ============================================================
+; Guía 3 - E50: zona DIRECTA  foo.pdc.lab
+; Archivo:   /etc/bind/zones/db.foo.pdc.lab
+; Chequear:  sudo named-checkzone foo.pdc.lab /etc/bind/zones/db.foo.pdc.lab
+; Recargar:  sudo rndc reload foo.pdc.lab      (o sudo systemctl reload named)
+;
+; ¡¡Cada vez que se modifica, INCREMENTAR EL SERIAL!!
+; Los nombres que NO terminan en "." se completan con $ORIGIN.
+;   "mail"            ->  mail.foo.pdc.lab.
+;   "mail.foo.pdc.lab"->  mail.foo.pdc.lab.foo.pdc.lab.   (error clásico, falta el punto)
+;   "@"               ->  foo.pdc.lab.  (el apex de la zona)
+; ============================================================
+$TTL 1d                          ; TTL por defecto (registros sin TTL propio)
+$ORIGIN foo.pdc.lab.
+
+;        TTL  clase tipo  datos
+@             IN    SOA   ns1.foo.pdc.lab. sgiambelluca.itba.edu.ar. (
+                          2026102602 ; serial  AAAAMMDDNN (siempre crece)
+                          1h         ; refresh: cada cuánto el secundario pregunta si cambió el serial
+                          15m        ; retry:   si falló el refresh, reintentar cada 15m
+                          1w         ; expire:  si el primario no responde por 1 semana, el secundario deja de responder la zona
+                          30m )      ; negative TTL: cuánto se cachea un NXDOMAIN (RFC 2308)
+;  En el SOA el mail del responsable se escribe con "." en vez de "@":
+;  sgiambelluca.itba.edu.ar.  ==  sgiambelluca@itba.edu.ar
+
+; ---------- Servidores de nombres de la zona ----------
+@             IN    NS    ns1
+
+; ---------- Mail entrante (menor número = mayor prioridad) ----------
+@             IN    MX    10 mail
+@             IN    MX    20 mail2
+
+; ---------- Hosts (A = IPv4, AAAA = IPv6) ----------
+@             IN    A     10.0.2.15      ; foo.pdc.lab -> esta VM (nginx hace el proxy de E47)
+ns1           IN    A     10.0.2.15      ; este servidor DNS (la VM)
+ubuntua       IN    A     10.0.2.15      ; el nombre del host
+mail          IN    A     10.0.2.15      ; postfix corre en esta VM
+mail2    5m   IN    A     10.0.2.16      ; TTL propio: 5 minutos (host ficticio de respaldo)
+gateway  1h   IN    A     10.0.2.2       ; router del NAT de VirtualBox (default gateway)
+dns-nat  1h   IN    A     10.0.2.3       ; DNS que ofrece el NAT de VirtualBox
+www      30s  IN    A     10.0.2.15      ; TTL muy corto: 30 segundos
+ubuntua       IN    AAAA  2001:db8::15   ; 2001:db8::/32 = prefijo reservado para documentación
+
+; ---------- Alias (CNAME): uno por cada host ----------
+; Un CNAME no puede convivir con otros registros del mismo nombre,
+; y NO se puede poner en el apex (@), porque ahí ya hay SOA y NS.
+dns           IN    CNAME ns1
+vm            IN    CNAME ubuntua
+correo        IN    CNAME mail
+correo2       IN    CNAME mail2
+router        IN    CNAME gateway
+resolver      IN    CNAME dns-nat
+w3            IN    CNAME www            ; distinto de www para HTTP: el header Host será w3.foo.pdc.lab
+alt           IN    CNAME @              ; E48: alt.foo.pdc.lab (nginx redirige a protos.foo)
+
+; ---------- Texto ----------
+@        1h   IN    TXT   "v=spf1 mx -all"     ; SPF: sólo los MX de la zona pueden mandar mail como @foo.pdc.lab
+info          IN    TXT   "Zona de practica - Protocolos de Comunicacion ITBA"

@@ -1,0 +1,31 @@
+# ============================================================
+# Guía 5 - E71: servidor telnet levantado por xinetd (super-server)
+# xinetd escucha el puerto 23 y, cuando llega una conexión, ejecuta
+# "server" con el socket conectado a su stdin/stdout.
+#
+# CORREGIDO 26/10: decía  server = /usr/bin/telnet  (¡el CLIENTE!)
+# y por eso al conectarse la sesión se cerraba enseguida
+# ("Connection closed by foreign host"). El demonio es /usr/sbin/telnetd
+# (paquete inetutils-telnetd; en otras distros se llama in.telnetd).
+#
+# Atributos:
+#   disable     = no      -> habilitado (doble negación clásica de xinetd)
+#   socket_type = stream  -> TCP  (dgram = UDP)
+#   user        = root    -> telnetd necesita root para ejecutar login
+#   wait        = no      -> un proceso nuevo por conexión (concurrente)
+# xinetd NO acepta comentarios al final de una línea: sólo líneas enteras con #.
+#
+# Aplicar:  sudo systemctl restart xinetd ; journalctl -u xinetd -n 20
+# Probar:   telnet localhost        (capturar en Wireshark con interfaz "lo")
+# ============================================================
+service telnet
+{
+	disable     = no
+	id          = telnet
+	socket_type = stream
+	protocol    = tcp
+	user        = root
+	wait        = no
+	server      = /usr/sbin/telnetd
+	log_on_failure += USERID
+}

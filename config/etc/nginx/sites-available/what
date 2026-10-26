@@ -1,0 +1,25 @@
+# ============================================================
+# Guía 2 - E36: sitio por defecto -> "What?"
+#
+# Cualquier pedido cuyo "Host:" no coincida con ningún server_name
+# (por ej. entrar por IP: http://127.0.0.1/ o http://10.0.2.15/)
+# cae en el server marcado como default_server.
+#
+# OJO: sólo puede haber UN default_server por puerto. Por eso se
+# deshabilitó sites-enabled/default (que también lo era); el archivo
+# original sigue en sites-available/default.
+#   Error si hay dos:  "a duplicate default server for 0.0.0.0:80"
+# ============================================================
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;                 # "_" = nombre inválido a propósito, no matchea nada
+
+    root  /var/www/what;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

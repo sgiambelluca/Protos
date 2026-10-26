@@ -1,0 +1,20 @@
+; ============================================================
+; Simulacro - Ej 1: zona sucursal.foo CORREGIDA
+; Validar:  named-checkzone sucursal.foo ej1-db.sucursal.foo-CORREGIDA.db
+; Errores del original marcados con [Ex] (ver apuntes/17-simulacro.md)
+; ============================================================
+$TTL 1h                       ; [E6] antes 604800 (1 semana): los resolvers cacheaban todo 1 semana
+
+@ IN SOA ns1.sucursal.foo. admin.sucursal.foo. (   ; [E3] MNAME: ns2 no existe ni es NS -> ns1   [E2] el mail va con "." no con "@"
+        2026102601      ; Serial    [E4] SUBIRLO (antes 2026010501): si no, los secundarios no piden la zona nueva
+        1h              ; Refresh   [E5] antes 604800 (1 semana): los secundarios tardaban una semana en enterarse
+        15m             ; Retry     antes 86400 (1 día, más que el refresh nuevo)
+        2419200         ; Expire    (4 semanas: está bien, es mayor que refresh + retry)
+        5m )            ; Negative  [E5] antes 604800: un NXDOMAIN quedaba cacheado 1 semana en los resolvers
+
+@       IN NS   ns1.sucursal.foo.
+@       IN MX   10 mail                 ; estaba bien: mail tiene su A
+ns1     IN A    192.168.50.1
+mail    IN A    192.168.50.20
+web     IN A    192.168.50.10           ; [E1] "web" no existía. IP de ejemplo: en el parcial, la del servidor web
+www     IN CNAME web                    ; [E1] antes "www IN A web": un A lleva una IPv4, no un nombre ("bad dotted quad")
