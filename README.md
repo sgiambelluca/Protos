@@ -9,7 +9,8 @@ Protos/
 ├── README.md               <- este archivo: estado de cada ejercicio y qué se tocó del sistema
 ├── apuntes/                <- teoría + sintaxis + errores comunes, por tema (empezar por 00-indice.md)
 │                              14 = parciales resueltos, 15 = ejercicios extra, 16 = vim/nano,
-│                              17 = simulacro de parcial (13 tiene la checklist antes de entregar)
+│                              17 = simulacro de parcial (13 tiene la checklist antes de entregar),
+│                              18 = DHCP paso a paso
 ├── referencias/            <- Cheatsheet_lab_ip.pdf (cheatsheet del lab de IP de la cátedra, tal cual).
 │                              Sólo en la copia local: no se sube al repo (ver "Material de terceros")
 ├── recu/                   <- ctf-protolab-resumen.md/.html: el CTF del integrador resuelto (el .html tiene las

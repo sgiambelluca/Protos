@@ -167,6 +167,8 @@ host impresora { hardware ethernet 08:00:27:AE:C8:6A; fixed-address 192.168.100.
 Más `INTERFACESv4="enpXsY"` en `/etc/default/isc-dhcp-server`, y **una IP de esa red en la
 interfaz** (`sudo ip addr add 192.168.100.1/24 dev enpXsY`).
 
+**Explicado desde cero, paso a paso y con DORA**: `18-dhcp-paso-a-paso.md`.
+
 **Para practicarlo en esta VM** sin tocar la red: `~/Protos/scripts/practicar-dhcp.sh`. Arma
 un par veth, levanta dhcpd con la config del parcial (o la tuya:
 `practicar-dhcp.sh mi.conf`), corre el nmap del enunciado y después limpia todo.

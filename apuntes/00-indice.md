@@ -19,10 +19,11 @@ VM. Los ejercicios resueltos están en `~/Protos/ejercicios/`.
 | 11 | `11-tls-y-certificados.md` | TLS, PKI, CA, certificados, mkcert, HSTS | 2 |
 | 12 | `12-temas-multi-host.md` | DHCP (**salió en 2025**, en una sola VM), RIP, ARP, forwarding | 8, 9, 10 |
 | 13 | `13-comandos-rapidos.md` | todos los comandos en una página + checklist cuando algo no anda + **checklist antes de entregar** | todas |
-| **14** | **`14-resoluciones-parciales.md`** | **parciales prácticos 2022 a 2026 resueltos paso a paso** (y qué temas toman más); incluye los dos de 2022 que trae `ejercicios-practicos.md` | — |
+| **14** | **`14-resoluciones-parciales.md`** | **parciales prácticos 2022 a 2026 resueltos paso a paso** (y qué temas toman más), con **aclaraciones** de dudas y 3 conceptos que se repiten (resolución de nombres, IP y MAC, TTL); incluye los dos de 2022 que trae `ejercicios-practicos.md` | — |
 | **15** | **`15-ejercicios-extra.md`** | **11 ejercicios tipo parcial** del repo (304, ncat, nginx con backend HTTPS, listen por IP, túneles, redirects, zona carlitos...) | — |
 | 16 | `16-vim-y-nano.md` | editar configs en la VM: nano, vim y `sudo tee` | — |
 | **17** | **`17-simulacro.md`** | **simulacro de parcial (7 ejercicios) para hacer a ciegas** en la VM con `simulacro.sh`, resoluciones y errores del PDF | — |
+| **18** | **`18-dhcp-paso-a-paso.md`** | **DHCP desde cero**: DORA, el ejercicio de 2025 explicado paso a paso con pruebas, errores típicos y tu config de clase para corregir | 8 |
 
 Además, en `~/Protos/referencias/Cheatsheet_lab_ip.pdf` está el **cheatsheet del laboratorio de
 IP** de la cátedra, copiado tal cual del repo. Está sólo en la copia local: no se sube al repo de GitHub (el original está en `practica/` de rodrihern/Protos-ITBA).
