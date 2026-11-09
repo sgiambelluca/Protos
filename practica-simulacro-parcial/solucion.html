@@ -46,10 +46,16 @@ $S montar    ej1      # levanta los servidores (o ej2/ej3/ej4, o 'todo')
 $S verificar ej1      # corrige: OK / FALLA por requisito
 $S solucion  ej1      # imprime esta resolución (en el Ej4 además deja la zona aplicada)
 $S limpiar   ej1      # saca TODO lo del ejercicio</code></pre>
+<p class="meta">Los escenarios son <b>guiados</b>: cada página/respuesta deja la pista del próximo
+paso (un <code>curl</code> directo te dice que algo está detrás de un proxy, el sitio interno te
+da las credenciales, el mail te pide el reporte…). Abajo está el camino completo de cada uno.</p>
 
 <div class="ej">
 <h2>Ejercicio 1 — Proxy Squid + Basic auth</h2>
-<p>El hackerspace sólo lo conoce el <b>proxy</b>: su nombre no está en tu resolver, así que
+<p>Arrancás por el sitio del grupo, que sí se alcanza directo y te cuenta la historia (te dice que
+el hackerspace se escondió detrás de un proxy en el <code>:3126</code> y cómo entrar):</p>
+<pre><code>curl http://ej1.protos.foo/</code></pre>
+<p>El hackerspace interno sólo lo conoce el <b>proxy</b>: su nombre no está en tu resolver, así que
 <code>curl</code> directo <b>no resuelve</b>. El que resuelve el nombre es el proxy — igual que
 <code>socks5h://</code> (con la <code>h</code>) frente a <code>socks5://</code> (resolvés vos).</p>
 <pre><code># directo NO resuelve:

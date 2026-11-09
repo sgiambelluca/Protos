@@ -4,6 +4,11 @@ Los 4 ejercicios del parcial que tomaste, armados como **escenarios repetibles**
 VM (todo por loopback, como el día del parcial). La idea: los levantás, los resolvés a ciegas,
 y un corrector te dice OK/FALLA por requisito. Después mirás la resolución.
 
+Son **guiados**: cada respuesta te deja la **pista del próximo paso**, con un poco de
+storytelling, así no andás adivinando el mecanismo. Un `curl` directo te avisa que algo está
+detrás de un proxy en tal puerto; el sitio interno te da las credenciales; el mail te pide el
+reporte; el server de descarga te dice qué bajar. Vos ejecutás cada paso y seguís las migas.
+
 El enunciado real y los pasos que anotaste están en `~/Downloads/Examen.pdf`. Acá cada ejercicio
 tiene: **enunciado** (para hacer a ciegas), **resolución** y **las trampas**.
 

@@ -34,6 +34,7 @@ SRV=/srv/parcial-2026-2c
 SQUID_CONF=/etc/squid/parcial-ej1.conf
 SQUID_HOSTS=/etc/squid/parcial-ej1-hosts
 E1_ROOT=$SRV/ej1/www
+E1_LANDING=$SRV/ej1/landing
 E1_NGINX=/etc/nginx/sites-available/parcial-ej1
 E1_HTPASS=/etc/nginx/parcial-ej1.htpasswd
 E1_PROXY_PORT=3126
@@ -77,26 +78,42 @@ montar_ej1() {
   limpiar_ej1 >/dev/null 2>&1
   paso "Ej1: Squid en :$E1_PROXY_PORT + hackerspace (sólo alcanzable por el proxy)"
 
-  # sitio hackerspace (nginx, SÓLO en loopback:8090)
-  sudo install -d "$E1_ROOT" "$E1_ROOT/novedades"
+  # PISO 1 - landing PUBLICO (se alcanza directo) que cuenta la historia y manda al proxy
+  sudo install -d "$E1_LANDING" "$E1_ROOT" "$E1_ROOT/novedades"
+  sudo tee "$E1_LANDING/index.html" >/dev/null <<'HTML'
+<!doctype html><html lang="es"><meta charset="utf-8"><title>DebSec</title>
+<h1>// DebSec //</h1>
+<p>Si llegaste hasta aca, sos de los nuestros. Bloom nos vigila, asi que sacamos el
+   hackerspace de la vista: ya no esta expuesto directo (por eso no lo encontras).</p>
+<p>Lo movimos detras de nuestro <b>proxy, que quedo escuchando en el puerto 3126</b> de
+   este mismo host. El sitio interno se llama <code>hackerspace.protos.foo</code> (puerto 8090)
+   y ese nombre <b>solo lo conoce el proxy</b>: si lo pedis directo, tu maquina no sabe quien es.</p>
+<p>Entra pasando por el proxy (a curl se lo decis con <code>-x</code>):</p>
+<pre>  curl -x http://ej1.protos.foo:3126 http://hackerspace.protos.foo:8090/</pre>
+<p class="n">(es un proxy HTTP; el equivalente SOCKS seria <code>-x socks5h://...</code>, donde la
+   <b>h</b> hace que resuelva el proxy, igual que aca.)</p>
+HTML
   sudo tee "$E1_ROOT/index.html" >/dev/null <<'HTML'
 <!doctype html><html lang="es"><meta charset="utf-8"><title>DebSec hackerspace</title>
 <h1>// DebSec hackerspace //</h1>
-<p>Bienvenido, camarada. El plan contra Bloom esta en el tablon de novedades.</p>
-<p>El tablon es solo para miembros. Entra con tus credenciales de miembro:</p>
+<p>Entraste por el proxy. Bien hecho, camarada. El plan contra Bloom esta en el tablon.</p>
+<p>El tablon <code>/novedades/</code> es <b>solo para miembros</b>: te va a pedir usuario y
+   clave (vas a ver un 401 si entras sin credenciales). Las tuyas son:</p>
 <pre>  usuario: debsec
   clave  : hackerspace</pre>
-<p>-> <a href="/novedades/">/novedades/</a></p>
+<p>Pedilo por el MISMO proxy, pasando las credenciales con <code>-u</code>:</p>
+<pre>  curl -x http://ej1.protos.foo:3126 -u debsec:hackerspace \
+       http://hackerspace.protos.foo:8090/novedades/</pre>
 HTML
   sudo tee "$E1_ROOT/novedades/index.html" >/dev/null <<'HTML'
 <!doctype html><html lang="es"><meta charset="utf-8"><title>Novedades DebSec</title>
 <h1>Novedades del grupo</h1>
 <ul>
   <li>Bloom movio el sistema de trackeo ct 2.0 al host 192.168.0.238.</li>
-  <li>Proxima reunion: miercoles 22:00, sala 3126.</li>
-  <li>FLAG{proxy-mas-basic-auth-ok}</li>
+  <li>Proxima reunion: miercoles 22:00.</li>
+  <li><b>FLAG{proxy-mas-basic-auth-ok}</b></li>
 </ul>
-<p>Pudiste leer esto => pasaste por el proxy Y te autenticaste. Ese era el ejercicio.</p>
+<p>Leiste esto =&gt; pasaste por el proxy Y te autenticaste. Ese era el ejercicio.</p>
 HTML
   sudo chown -R www-data:www-data "$SRV/ej1"
 
@@ -106,7 +123,14 @@ HTML
   sudo chmod 640 "$E1_HTPASS"; sudo chown root:www-data "$E1_HTPASS"
 
   sudo tee "$E1_NGINX" >/dev/null <<EOF
-# hackerspace del Ej1: escucha SOLO en loopback:$E1_ORIGIN_PORT
+# landing PUBLICO del Ej1 (se alcanza directo en :80 y te manda al proxy)
+server {
+    listen 80;
+    server_name ej1.protos.foo;
+    root $E1_LANDING;
+    index index.html;
+}
+# hackerspace INTERNO: escucha SOLO en loopback:$E1_ORIGIN_PORT
 server {
     listen 127.0.0.1:$E1_ORIGIN_PORT;
     server_name hackerspace.protos.foo;
@@ -154,17 +178,19 @@ EOF
 
   tit "Montado. Consigna:"
   cat <<EOF
-  Conectate al hackerspace de DebSec. Solo se llega mediante el proxy
-      http://ej1.protos.foo:$E1_PROXY_PORT
-  y el tablon de novedades es solo para miembros. Decime que dice el ultimo
-  anuncio del tablon.
-  (si probas 'curl http://hackerspace.protos.foo:$E1_ORIGIN_PORT/' directo, no resuelve:
-   ese nombre solo lo conoce el proxy. Esa es la gracia de -x / socks5h.)
+  Sos de DebSec y queres ver las novedades del grupo. Empeza por el sitio del grupo:
+
+      curl http://ej1.protos.foo/
+
+  Esa pagina te va a decir como seguir (el hackerspace se escondio detras de un proxy).
+  Segui las pistas de cada paso hasta leer el ultimo anuncio del tablon.
 EOF
 }
 
 verificar_ej1() {
   tit "Ej1 - proxy Squid + Basic auth"
+  chk "el landing directo (ej1.protos.foo) existe y nombra el proxy :$E1_PROXY_PORT" \
+      bash -c "curl -s --retry 2 --retry-connrefused --max-time 8 http://ej1.protos.foo/ | grep -q '$E1_PROXY_PORT'"
   chk "Squid escucha en :$E1_PROXY_PORT" bash -c "sudo ss -tulpn | grep -q ':$E1_PROXY_PORT '"
   chk_not "hackerspace NO resuelve directo (sin proxy)" \
       bash -c "curl -s --max-time 5 http://hackerspace.protos.foo:$E1_ORIGIN_PORT/ -o /dev/null"
@@ -180,6 +206,12 @@ verificar_ej1() {
 solucion_ej1() {
   tit "Ej1 - resolución"
   cat <<EOF
+  0) Empezas por el sitio del grupo, que SI se alcanza directo y te cuenta la historia:
+
+     curl http://ej1.protos.foo/
+     -> dice que el hackerspace se escondio detras de un proxy en el :$E1_PROXY_PORT y que el
+        sitio interno (hackerspace.protos.foo) solo lo resuelve el proxy.
+
   1) El index del hackerspace se alcanza SOLO por el proxy (su nombre lo conoce el proxy,
      no tu resolver). Como con socks5h, el que resuelve el nombre es el proxy:
 
@@ -217,8 +249,17 @@ montar_ej2() {
 
   sudo install -d "$E2_ROOT" "$E2_ROOT/sec" "$E2_BACK"
   sudo tee "$E2_ROOT/index.html" >/dev/null <<'HTML'
-<!doctype html><meta charset="utf-8"><title>google.com</title><h1>google.com (falso)</h1>
-<p>Sitio del puerto 80, root /var/www. La clave privada esta en /sec/mykey.</p>
+<!doctype html><html lang="es"><meta charset="utf-8"><title>google.com</title>
+<h1>google.com (falso)</h1>
+<p>Este es el vhost del puerto 80 con <code>server_name google.com</code>, root /var/www.
+   Lo elegiste bien mandando el header <code>Host: google.com</code>.</p>
+<p>La clave privada de pepito esta en <code>/sec/mykey</code>. Bajala y dale permisos estrictos
+   (si no, ssh la rechaza por permisos abiertos):</p>
+<pre>  curl http://127.0.0.1/sec/mykey -H "Host: google.com" -o mykey
+  chmod 600 mykey</pre>
+<p>Ojo: la clave tiene <b>passphrase</b>. No esta aca: esta en el host INTERNO
+   <code>secrethost</code>, que no se ve directo pero se alcanza por el proxy del puerto 81:</p>
+<pre>  curl http://127.0.0.1:81/ -H "Host: secrethost"</pre>
 HTML
 
   # clave de pepito, protegida con passphrase; la privada queda servida en /sec/mykey
@@ -229,10 +270,12 @@ HTML
 
   # backend interno (:8000) con la passphrase
   sudo tee "$E2_BACK/index.html" >/dev/null <<EOF
-<!doctype html><meta charset="utf-8"><title>secrethost interno</title>
+<!doctype html><html lang="es"><meta charset="utf-8"><title>secrethost interno</title>
 <h1>host interno (127.0.0.1:$E2_BACK_PORT)</h1>
-<p>Contenido NO accesible directo desde afuera.</p>
+<p>Llegaste por el proxy del :81. Este contenido no es accesible directo desde afuera.</p>
 <p>La passphrase de la clave privada de pepito es: <b>$E2_PASSPHRASE</b></p>
+<p>Ya tenes todo. Entra por SSH (cuando pida la passphrase, pone la de arriba):</p>
+<pre>  ssh -i mykey $E2_SSH_USER@127.0.0.1</pre>
 EOF
   sudo chown -R www-data:www-data "$E2_BACK"
 
@@ -270,10 +313,13 @@ EOF
 
   tit "Montado. Consigna:"
   cat <<EOF
-  El host tiene nginx con vhost google.com en :80 (root /var/www) y un vhost interno
-  "secrethost" en :81 que reenvia a 127.0.0.1:$E2_BACK_PORT. Ademas, SSH solo acepta a
-  "pepito" con clave privada, guardada en /sec/mykey, pero con passphrase.
-  Extrae la clave, consegui la passphrase y entra por SSH como pepito.
+  SSH solo acepta a "pepito" con clave privada, y la clave esta guardada en /sec/mykey de un
+  nginx con vhost "google.com" (:80). Arranca pidiendo ese sitio con el Host correcto:
+
+      curl http://127.0.0.1/sec/mykey -H "Host: google.com"
+
+  o mira primero su portada:  curl http://127.0.0.1/ -H "Host: google.com"
+  Cada paso te deja la pista del siguiente, hasta entrar por SSH como pepito.
 EOF
 }
 
@@ -332,26 +378,33 @@ montar_ej3() {
   paso "Ej3: casilla de correo para practicar SMTP y POP3 a mano"
   id "$E3_USER" >/dev/null 2>&1 || sudo useradd -m -s /bin/bash "$E3_USER"
   echo "$E3_USER:$E3_PASS" | sudo chpasswd
-  # mail semilla DE friend@pdc.lab, MIME base64 (como el del parcial)
-  local body; body=$(printf '%s' 'Hola, soy friend. Confirma que te llego este mail.' | base64)
-  sudo tee /tmp/semilla-ej3.eml >/dev/null <<EOF
+  sudo -u "$E3_USER" mkdir -p "/home/$E3_USER/Maildir/cur" "/home/$E3_USER/Maildir/new" "/home/$E3_USER/Maildir/tmp"
+  # mail semilla DE friend@pdc.lab, MIME base64 (como el del parcial): guia el paso b).
+  # Lo dejo directo en el Maildir (dovecot lo sirve por POP3): instantaneo y sin depender del
+  # pickup de postfix. El envio por SMTP del alumno (el ejercicio real) si pasa por postfix.
+  local body; body=$(printf '%s' 'Camarada: si estas leyendo esto por POP3, el canal anda. Tu proximo paso: mandanos tu reporte por SMTP (nc -C 127.0.0.1 25) a debsec@pdc.lab con Subject: DebSec report y el cuerpo en base64. - friend' | base64)
+  local seed="/home/$E3_USER/Maildir/new/$(date +%s).M${RANDOM}seed.$(hostname)"
+  sudo tee "$seed" >/dev/null <<EOF
+Return-Path: <friend@$E3_DOMAIN>
 From: Friend <friend@$E3_DOMAIN>
 To: <$E3_USER@$E3_DOMAIN>
 Subject: Hola
+Date: $(date -R)
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: base64
 
 $body
 EOF
-  sudo sendmail -f "friend@$E3_DOMAIN" "$E3_USER@$E3_DOMAIN" < /tmp/semilla-ej3.eml
-  sudo rm -f /tmp/semilla-ej3.eml
-  sleep 1
+  sudo chown "$E3_USER:$E3_USER" "$seed"
   tit "Montado. Consigna:"
   cat <<EOF
   Hay una casilla nueva:  usuario POP3 '$E3_USER', clave '$E3_PASS', dominio $E3_DOMAIN.
-  a) Verifica por POP3 (:110) si llego algun mail y leelo (acordate de decodificar el base64).
-  b) Manda vos un mail por SMTP a mano (nc -C 127.0.0.1 25) a $E3_USER@$E3_DOMAIN,
-     con Subject 'DebSec report' y cuerpo en base64. Despues confirma por POP3 que entro.
+  Empeza leyendo el correo por POP3 (:110) con nc -C: ahi hay un mail que te dice que hacer.
+
+      nc -C 127.0.0.1 110    (USER / PASS / STAT / LIST / RETR 1 / QUIT)
+
+  El cuerpo viene en base64 (decodificalo con: echo '<base64>' | base64 -d). El mail te va a
+  pedir que mandes tu reporte por SMTP: segui esa pista y despues confirma por POP3 que entro.
 EOF
 }
 
@@ -402,6 +455,12 @@ EOF
 }
 
 limpiar_ej3() {
+  # sacar de la cola cualquier mail del lab (debsec/friend@pdc.lab) para que no quede un
+  # bounce trabado al borrar el usuario; NO toca el resto de la cola
+  mailq 2>/dev/null | awk '
+    /^[0-9A-F]/ { id=$1; sub(/[*!]$/,"",id) }
+    /debsec@'"$E3_DOMAIN"'|friend@'"$E3_DOMAIN"'/ { print id }
+  ' | sort -u | while read -r qid; do sudo postsuper -d "$qid" >/dev/null 2>&1; done
   sudo userdel -r "$E3_USER" 2>/dev/null
 }
 
@@ -412,22 +471,36 @@ montar_ej4() {
   if [ ! -f "$BASE/ej4/backup.pcap" ]; then
     info "falta $BASE/ej4/backup.pcap (sincronizá el repo con rsync a la VM)"; return 1
   fi
-  # servidor http para "descargar" la captura, como en el parcial (corre como vos, no www-data)
-  nohup python3 -m http.server "$E4_DL_PORT" --bind 127.0.0.1 --directory "$BASE/ej4" \
+  # dir propio para servir la captura + un index con la pista (no ensucia el repo)
+  mkdir -p "$SRV/ej4" 2>/dev/null || sudo mkdir -p "$SRV/ej4"
+  sudo cp "$BASE/ej4/backup.pcap" "$SRV/ej4/backup.pcap"
+  sudo tee "$SRV/ej4/index.html" >/dev/null <<EOF
+<!doctype html><html lang="es"><meta charset="utf-8"><title>backups namemaster</title>
+<h1>Backups del namemaster</h1>
+<p>Cachito borro la zona y no hay backups desde 2018... salvo esta captura, que quedo con las
+   queries y replies del namemaster. Bajala:</p>
+<pre>  curl -O http://127.0.0.1:$E4_DL_PORT/backup.pcap</pre>
+<p>Abrila con Wireshark y reconstrui la zona <code>$E4_ZONE</code> en bind9: de cada reply
+   AUTORITATIVA (flag aa) sacas un registro con su TTL; el SOA sale de una respuesta negativa
+   (NXDOMAIN). Al final agrega un TXT: "cachito tiene prohibido editar este archivo".</p>
+EOF
+  sudo chown -R "$USER" "$SRV/ej4" 2>/dev/null
+  # servidor http (corre como vos, no www-data)
+  nohup python3 -m http.server "$E4_DL_PORT" --bind 127.0.0.1 --directory "$SRV/ej4" \
         >/tmp/parcial-ej4-http.log 2>&1 &
   echo $! > "$E4_DL_PID"
   sleep 1
   tit "Montado. Consigna:"
   cat <<EOF
-  Cachito borro la config de la zona DNS y no hay backups. Por suerte quedo una captura
-  con queries y replies del namemaster. Bajala, reconstrui la zona "$E4_ZONE" con bind9
-  y agrega un TXT que diga "cachito tiene prohibido editar este archivo".
+  Cachito borro la config de la zona DNS y no hay backups. Por suerte quedo una captura con
+  queries y replies del namemaster, en un server HTTP. Mira que hay y segui la pista:
 
+    curl http://127.0.0.1:$E4_DL_PORT/            # te dice que bajar y que hacer
     curl -O http://127.0.0.1:$E4_DL_PORT/backup.pcap
     wireshark backup.pcap        # (la GUI no tiene el perfil AppArmor que molesta a tshark)
 
-  La zona va en:  $E4_ZONEFILE   y la declarás en /etc/bind/named.conf.local
-  Verifica con:   dig @127.0.0.1 $E4_ZONE  (y cada nombre de la captura); tienen que traer 'aa'.
+  Reconstrui la zona "$E4_ZONE" en $E4_ZONEFILE, declarala en /etc/bind/named.conf.local, y
+  agrega un TXT "cachito tiene prohibido editar este archivo". Verifica con dig @127.0.0.1.
 EOF
 }
 
@@ -495,6 +568,7 @@ EOF
 limpiar_ej4() {
   [ -f "$E4_DL_PID" ] && { kill "$(cat "$E4_DL_PID")" 2>/dev/null; rm -f "$E4_DL_PID"; }
   pkill -u "$USER" -f "http.server $E4_DL_PORT" 2>/dev/null   # -u $USER: sólo mis procesos, nunca tu www-data
+  sudo rm -rf "$SRV/ej4"
   sudo sed -i '/^\/\/ --- PARCIAL-2026-2C-EJ4/,/^\/\/ --- FIN PARCIAL-2026-2C-EJ4/d' /etc/bind/named.conf.local
   sudo rm -f "$E4_ZONEFILE" "$E4_ZONEFILE.jnl"
   sudo rndc reconfig 2>/dev/null

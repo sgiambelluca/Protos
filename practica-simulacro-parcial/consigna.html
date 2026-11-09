@@ -37,18 +37,20 @@
 <p class="meta">Todo corre en una sola VM por loopback. Montá los escenarios con
 <code>~/Protos/practica-simulacro-parcial/parcial-2026-2c.sh montar todo</code> (o <code>ejN</code>).
 Cuando termines, corregí con <code>… verificar ejN</code>. Las soluciones están en el otro PDF.</p>
+<div class="box"><b>Cómo se juega:</b> cada ejercicio se resuelve <b>paso a paso</b> — cada
+respuesta te deja la <b>pista del próximo comando</b>. No tenés que adivinar el mecanismo: hacé
+el primer comando que te doy abajo y seguí las migas de pan.</div>
 
 <div class="ej">
 <h2>Ejercicio 1 <span class="tag">proxy + HTTP</span></h2>
 <p>Pertenecés a la organización de hackers <b>DebSec</b>, cuyo objetivo es hackear a <b>Bloom</b>,
 una organización que recopila información personal de los ciudadanos mediante el sistema de
 trackeo <i>ct 2.0</i>.</p>
-<p>Conectate al <b>hackerspace</b> mediante el proxy</p>
-<pre><code>http://ej1.protos.foo:3126</code></pre>
-<p>para ver qué novedades hay en el grupo. El tablón de novedades es <b>sólo para miembros</b>.
-Decí cuál es el último anuncio del tablón.</p>
-<p class="nota">Pista: el nombre del hackerspace no lo resuelve tu máquina, sólo el proxy
-(pensá en <code>socks5h</code> vs <code>socks5</code>).</p>
+<p>Querés ver qué novedades hay en el grupo. Empezá por el sitio de DebSec:</p>
+<pre><code>curl http://ej1.protos.foo/</code></pre>
+<p>Esa página te va a decir cómo seguir (spoiler: el hackerspace se escondió detrás de un proxy).
+Seguí las pistas de cada paso hasta leer el <b>último anuncio del tablón</b>, que es sólo para
+miembros.</p>
 </div>
 
 <div class="ej">
@@ -70,7 +72,10 @@ server {
 <b>pepito</b> con clave privada. Sabemos que dicha clave privada está guardada en
 <code>/sec/mykey</code>. Por desgracia, nos informan que pepito le puso una <b>contraseña</b>
 (passphrase) a la clave.</p>
-<p><b>Extraé la clave, averiguá la passphrase y entrá por SSH como pepito.</b></p>
+<p><b>Extraé la clave, averiguá la passphrase y entrá por SSH como pepito.</b> Empezá mirando la
+portada de ese sitio (acordate de elegir el vhost con el header <code>Host</code>):</p>
+<pre><code>curl http://127.0.0.1/ -H "Host: google.com"</code></pre>
+<p class="nota">Cada paso te deja la pista del siguiente, hasta el <code>ssh</code> final.</p>
 </div>
 
 <div class="ej">
@@ -89,18 +94,20 @@ Subject: Hola
 QUIT</code></pre>
 <p><b>b)</b> Al salir del examen, tu compañero asegura que el mensaje le debió haber llegado.
 Confirmalo (o refutalo) revisando la casilla por POP3.</p>
-<div class="box"><span class="nota">En la VM: casilla POP3 usuario <code>debsec</code>, clave <code>debsec</code>,
-dominio <code>pdc.lab</code>. Además, mandá vos un mail por SMTP a mano (con Subject
-<code>DebSec report</code> y cuerpo en base64) y confirmá por POP3 que entró.</span></div>
+<div class="box"><span class="nota">En la VM tenés una casilla: POP3 usuario <code>debsec</code>, clave
+<code>debsec</code>, dominio <code>pdc.lab</code>. Empezá leyendo el correo por POP3
+(<code>nc -C 127.0.0.1 110</code>): hay un mail que te dice el próximo paso. Seguí esa pista,
+mandá tu reporte por SMTP y confirmá por POP3 que entró.</span></div>
 </div>
 
 <div class="ej">
 <h2>Ejercicio 4 <span class="tag">DNS / bind9</span></h2>
 <p>Cachito, un junior de tu empresa, borró accidentalmente todos los archivos de configuración de
 la zona DNS, y el cronjob que ejecutaba los backups no se corre desde 2018. Afortunadamente,
-quedó guardada una captura PCAP con queries y replies del namemaster. El archivo se puede
-descargar de:</p>
-<pre><code>curl -O http://127.0.0.1:8008/backup.pcap</code></pre>
+quedó guardada una captura PCAP con queries y replies del namemaster, en un server HTTP.
+Mirá qué hay y seguí la pista:</p>
+<pre><code>curl http://127.0.0.1:8008/          # te dice qué bajar y qué hacer
+curl -O http://127.0.0.1:8008/backup.pcap</code></pre>
 <p><b>Restaurá la configuración original de la zona <code>cachito.parcial</code> con bind9</b>, y
 agregá un record TXT que diga <code>cachito tiene prohibido editar este archivo</code>.</p>
 <p class="nota">Aclaración del profe: si ya tenés un DNS configurado con bind, es más fácil; si no,
