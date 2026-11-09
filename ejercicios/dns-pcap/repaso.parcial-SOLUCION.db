@@ -1,0 +1,40 @@
+; ============================================================
+; SOLUCIÓN de la captura de repaso (ejercicios/dns-pcap/repaso.pcapng).
+; NO la abras antes de intentarlo: el enunciado está en apuntes/19-dns-desde-pcap.md.
+; ============================================================
+$TTL 3600
+$ORIGIN repaso.parcial.
+
+; SOA: del NXDOMAIN de noexiste.repaso.parcial (sección AUTHORITY).
+; En la captura vino con TTL 300: un SOA de respuesta negativa viaja con
+; min(TTL del SOA, minimum) = min(3600, 300). NO es que el $TTL sea 300.
+@       IN  SOA ns1.repaso.parcial. hostmaster.repaso.parcial. (
+            2026110402  ; serial (captura: 2026110401, +1 por el TXT nuevo)
+            7200        ; refresh
+            900         ; retry
+            604800      ; expire
+            300 )       ; minimum
+
+; NS: uno adentro de la zona (con su A en ADDITIONAL) y uno AFUERA.
+; Del de afuera bind no tiene la A, por eso en ADDITIONAL no vino nada para él.
+@       IN  NS  ns1
+@       IN  NS  ns.otro.example.        ; ¡con punto final! si no: ns.otro.example.repaso.parcial
+ns1     IN  A   198.51.100.53
+
+; MX: mx1 vino con A y AAAA en ADDITIONAL; mx2.otro.example. es de afuera.
+@       IN  MX  5  mx1
+@       IN  MX  15 mx2.otro.example.
+mx1     IN  A    198.51.100.25
+mx1     IN  AAAA 2001:db8:25::1
+
+; dig www A devolvió en ANSWER un CNAME y DOS A de "web": www es un alias.
+; Las A de web vinieron con TTL 300 (distinto del default).
+www     IN  CNAME web
+web 300 IN  A    198.51.100.80
+web 300 IN  A    198.51.100.81
+web     IN  AAAA 2001:db8:80::1
+
+_dmarc  IN  TXT "v=DMARC1; p=none"
+
+; Lo nuevo que pide el enunciado:
+nota    IN  TXT "Sin DNSSEC esta zona es como un candado de cotillon"

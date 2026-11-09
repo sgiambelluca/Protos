@@ -211,6 +211,12 @@ whois itba.edu.ar                   # datos de REGISTRO (titular, fechas, NS del
 
 Las resoluciones completas, paso a paso, están en `14-resoluciones-parciales.md`.
 
+**2026 2C, Ej 4** (`19-dns-desde-pcap.md`): se borró la zona `protos.parcial` y hay que
+**reconstruirla desde una captura** (`~/pcapej4`) y agregarle un TXT. Las claves: cada registro
+de las respuestas es una línea de la zona; el SOA sale de la sección AUTHORITY de un
+NXDOMAIN; las A de los NS y MX salen de ADDITIONAL; y hay que mirar el TTL de cada registro
+(uno tiene 864000, no 86400).
+
 **Simulacro** (`17-simulacro.md`): el Ej 1 es otra zona rota (`sucursal.foo`). Sólo un error impide cargarla; el resto (`@` en el mail, MNAME que no es NS, serial y tiempos) carga igual y hay que encontrarlo a mano. `simulacro.sh` la monta en bind y la corrige.
 
 ### 2025 2C, Ej III: "la zona it.itba.edu.ar no resuelve nada": encontrar los errores

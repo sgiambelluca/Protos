@@ -24,6 +24,8 @@ VM. Los ejercicios resueltos están en `~/Protos/ejercicios/`.
 | 16 | `16-vim-y-nano.md` | editar configs en la VM: nano, vim y `sudo tee` | — |
 | **17** | **`17-simulacro.md`** | **simulacro de parcial (7 ejercicios) para hacer a ciegas** en la VM con `simulacro.sh`, resoluciones y errores del PDF | — |
 | **18** | **`18-dhcp-paso-a-paso.md`** | **DHCP desde cero**: DORA, el ejercicio de 2025 explicado paso a paso con pruebas, errores típicos y tu config de clase para corregir | 8 |
+| **19** | **`19-dns-desde-pcap.md`** | **reconstruir una zona desde una captura** (Parcial 2026 2C Ej 4, `~/pcapej4`): las 3 secciones de una respuesta, de dónde sale el SOA, las trampas de TTL, el TXT nuevo; `practicar-dns-pcap.sh` y una captura de repaso para hacer a ciegas | 3, {W} |
+| **20** | **`20-parcial-2026-2c.md`** | **el parcial 2026 2C completo** (los 4 ejercicios que rendiste) como escenarios repetibles en la VM con `parcial-2026-2c.sh montar\|verificar\|limpiar\|solucion ejN`: proxy Squid, nginx por Host + SSH con passphrase, SMTP/POP3 a mano, y la zona DNS desde pcap | — |
 
 Además, en `~/Protos/referencias/Cheatsheet_lab_ip.pdf` está el **cheatsheet del laboratorio de
 IP** de la cátedra, copiado tal cual del repo. Está sólo en la copia local: no se sube al repo de GitHub (el original está en `practica/` de rodrihern/Protos-ITBA).

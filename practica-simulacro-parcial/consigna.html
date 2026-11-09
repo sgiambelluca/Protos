@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Consigna — Práctica Parcial 2026 2C</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1a1a1a;
+         font-size: 11.2pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 2pt; }
+  h2 { font-size: 14pt; margin: 22pt 0 6pt; padding-bottom: 3pt;
+       border-bottom: 2px solid #1a53c0; color: #12337a; }
+  .sub { color: #555; margin: 0 0 4pt; }
+  .meta { color: #666; font-size: 9.5pt; margin: 0 0 14pt; }
+  code, pre { font-family: "SF Mono", "Menlo", "Consolas", monospace; }
+  code { background: #f1f3f7; padding: 1px 4px; border-radius: 3px; font-size: 9.6pt; }
+  pre { background: #0f172a; color: #e6edf6; padding: 9px 12px; border-radius: 6px;
+        font-size: 9.2pt; line-height: 1.45; overflow-x: auto; white-space: pre-wrap; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .box { background: #f7f9fc; border: 1px solid #dde3ee; border-left: 4px solid #1a53c0;
+         border-radius: 5px; padding: 8px 12px; margin: 8px 0; }
+  .tag { display: inline-block; background: #1a53c0; color: #fff; font-size: 8.5pt;
+         font-weight: 600; padding: 1px 8px; border-radius: 10px; vertical-align: middle; }
+  .ej { page-break-inside: avoid; }
+  ul { margin: 4pt 0; padding-left: 20px; }
+  li { margin: 2pt 0; }
+  .nota { color: #555; font-size: 9.8pt; }
+  hr { border: none; border-top: 1px solid #e2e6ee; margin: 16pt 0; }
+  .foot { color: #888; font-size: 9pt; margin-top: 18pt; }
+</style>
+</head>
+<body>
+
+<h1>Práctica — Parcial 2026 2C</h1>
+<p class="sub">Protocolos de Comunicación (ITBA 72.07) · consigna para hacer a ciegas</p>
+<p class="meta">Todo corre en una sola VM por loopback. Montá los escenarios con
+<code>~/Protos/practica-simulacro-parcial/parcial-2026-2c.sh montar todo</code> (o <code>ejN</code>).
+Cuando termines, corregí con <code>… verificar ejN</code>. Las soluciones están en el otro PDF.</p>
+
+<div class="ej">
+<h2>Ejercicio 1 <span class="tag">proxy + HTTP</span></h2>
+<p>Pertenecés a la organización de hackers <b>DebSec</b>, cuyo objetivo es hackear a <b>Bloom</b>,
+una organización que recopila información personal de los ciudadanos mediante el sistema de
+trackeo <i>ct 2.0</i>.</p>
+<p>Conectate al <b>hackerspace</b> mediante el proxy</p>
+<pre><code>http://ej1.protos.foo:3126</code></pre>
+<p>para ver qué novedades hay en el grupo. El tablón de novedades es <b>sólo para miembros</b>.
+Decí cuál es el último anuncio del tablón.</p>
+<p class="nota">Pista: el nombre del hackerspace no lo resuelve tu máquina, sólo el proxy
+(pensá en <code>socks5h</code> vs <code>socks5</code>).</p>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 2 <span class="tag">nginx + SSH</span></h2>
+<p>El host tiene un servidor nginx con los siguientes sitios habilitados:</p>
+<pre><code>server {
+    listen 80;
+    root /var/www;
+    index index.html;
+    server_name google.com;
+    location / { try_files $uri $uri/ =404; }
+}
+server {
+    listen 81;
+    server_name secrethost;
+    location / { proxy_pass http://127.0.0.1:8000/; }
+}</code></pre>
+<p>Asimismo, este host tiene un servidor OpenSSH que sólo acepta el login del usuario
+<b>pepito</b> con clave privada. Sabemos que dicha clave privada está guardada en
+<code>/sec/mykey</code>. Por desgracia, nos informan que pepito le puso una <b>contraseña</b>
+(passphrase) a la clave.</p>
+<p><b>Extraé la clave, averiguá la passphrase y entrá por SSH como pepito.</b></p>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 3 <span class="tag">SMTP + POP3</span></h2>
+<p><b>a)</b> Tu compañero de parcial está intentando mandar un mail por <code>nc</code> pero comete
+un par de errores al escribir el protocolo. Como no querés que recurse, marcale en su hoja los
+errores que encontrás:</p>
+<pre><code>ubuntu&gt; nc 192.168.0.168
+HELLO localhost
+MAIL FROM: friend@pdc.lab
+MAIL TO: &lt;you&gt;
+DATA
+Subject: Hola
+
+¿Cómo estás?
+QUIT</code></pre>
+<p><b>b)</b> Al salir del examen, tu compañero asegura que el mensaje le debió haber llegado.
+Confirmalo (o refutalo) revisando la casilla por POP3.</p>
+<div class="box"><span class="nota">En la VM: casilla POP3 usuario <code>debsec</code>, clave <code>debsec</code>,
+dominio <code>pdc.lab</code>. Además, mandá vos un mail por SMTP a mano (con Subject
+<code>DebSec report</code> y cuerpo en base64) y confirmá por POP3 que entró.</span></div>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 4 <span class="tag">DNS / bind9</span></h2>
+<p>Cachito, un junior de tu empresa, borró accidentalmente todos los archivos de configuración de
+la zona DNS, y el cronjob que ejecutaba los backups no se corre desde 2018. Afortunadamente,
+quedó guardada una captura PCAP con queries y replies del namemaster. El archivo se puede
+descargar de:</p>
+<pre><code>curl -O http://127.0.0.1:8008/backup.pcap</code></pre>
+<p><b>Restaurá la configuración original de la zona <code>cachito.parcial</code> con bind9</b>, y
+agregá un record TXT que diga <code>cachito tiene prohibido editar este archivo</code>.</p>
+<p class="nota">Aclaración del profe: si ya tenés un DNS configurado con bind, es más fácil; si no,
+es “picante”.</p>
+</div>
+
+<hr>
+<p class="foot">Corrector: <code>parcial-2026-2c.sh verificar ejN</code> · Resolución: <code>solucion.pdf</code>
+· Limpieza: <code>parcial-2026-2c.sh limpiar todo</code></p>
+
+</body>
+</html>

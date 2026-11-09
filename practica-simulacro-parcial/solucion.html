@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Solución — Práctica Parcial 2026 2C</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1a1a1a;
+         font-size: 11pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 2pt; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; padding-bottom: 3pt;
+       border-bottom: 2px solid #0a7d4d; color: #0a6b42; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 3pt; color: #12337a; }
+  .sub { color: #555; margin: 0 0 4pt; }
+  .meta { color: #666; font-size: 9.5pt; margin: 0 0 14pt; }
+  code, pre { font-family: "SF Mono", "Menlo", "Consolas", monospace; }
+  code { background: #f1f3f7; padding: 1px 4px; border-radius: 3px; font-size: 9.5pt; }
+  pre { background: #0f172a; color: #e6edf6; padding: 9px 12px; border-radius: 6px;
+        font-size: 9pt; line-height: 1.45; white-space: pre-wrap; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .ok { color: #0a6b42; font-weight: 600; }
+  .trampa { background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #ea8a1e;
+            border-radius: 5px; padding: 7px 12px; margin: 8px 0; }
+  .trampa b { color: #b45309; }
+  .ej { page-break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 7px 0; font-size: 9.6pt; }
+  th, td { border: 1px solid #d7deea; padding: 4px 7px; text-align: left; vertical-align: top; }
+  th { background: #eef2f9; }
+  ul { margin: 4pt 0; padding-left: 20px; }
+  li { margin: 2pt 0; }
+  hr { border: none; border-top: 1px solid #e2e6ee; margin: 14pt 0; }
+  .foot { color: #888; font-size: 9pt; margin-top: 16pt; }
+</style>
+</head>
+<body>
+
+<h1>Solución — Práctica Parcial 2026 2C</h1>
+<p class="sub">Protocolos de Comunicación (ITBA 72.07) · resolución paso a paso</p>
+<p class="meta">Escenarios en una sola VM por loopback. Cada ejercicio se monta, se resuelve y se
+corrige con el mismo script. Las credenciales del laboratorio están al final.</p>
+
+<h3>Uso del corrector</h3>
+<pre><code>S=~/Protos/practica-simulacro-parcial/parcial-2026-2c.sh
+$S montar    ej1      # levanta los servidores (o ej2/ej3/ej4, o 'todo')
+$S verificar ej1      # corrige: OK / FALLA por requisito
+$S solucion  ej1      # imprime esta resolución (en el Ej4 además deja la zona aplicada)
+$S limpiar   ej1      # saca TODO lo del ejercicio</code></pre>
+
+<div class="ej">
+<h2>Ejercicio 1 — Proxy Squid + Basic auth</h2>
+<p>El hackerspace sólo lo conoce el <b>proxy</b>: su nombre no está en tu resolver, así que
+<code>curl</code> directo <b>no resuelve</b>. El que resuelve el nombre es el proxy — igual que
+<code>socks5h://</code> (con la <code>h</code>) frente a <code>socks5://</code> (resolvés vos).</p>
+<pre><code># directo NO resuelve:
+curl http://hackerspace.protos.foo:8090/          # Could not resolve host
+
+# por el proxy SÍ (el proxy resuelve y trae la página):
+curl -x http://ej1.protos.foo:3126 http://hackerspace.protos.foo:8090/
+#   -> credenciales de miembro (debsec / hackerspace) y el link /novedades/
+
+# el tablón pide Basic auth -> se la pasás con -u:
+curl -x http://ej1.protos.foo:3126 -u debsec:hackerspace \
+     http://hackerspace.protos.foo:8090/novedades/
+#   -> el último anuncio es la FLAG{...}</code></pre>
+<ul>
+  <li><code>-x http://proxy:puerto</code> = proxy <b>HTTP</b>: el pedido sale en <i>forma absoluta</i>
+      (<code>GET http://host/ HTTP/1.1</code>).</li>
+  <li><code>-u user:pass</code> manda <code>Authorization: Basic base64(user:pass)</code>. Sin
+      credenciales el server responde <b>401</b> con <code>WWW-Authenticate: Basic</code>.</li>
+</ul>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 2 — Vhosts por Host + proxy reverso + SSH con passphrase</h2>
+<pre><code># 1) bajar la clave: el vhost se elige por el header Host (no por DNS)
+curl http://127.0.0.1/sec/mykey -H "Host: google.com" -o mykey
+head -1 mykey                 # -----BEGIN OPENSSH PRIVATE KEY-----
+
+# 2) permisos estrictos (si no, ssh/ssh-keygen la rechazan)
+chmod 600 mykey
+
+# 3) la passphrase vive en el host interno, que sólo se alcanza por el proxy del :81
+curl http://127.0.0.1:81/ -H "Host: secrethost"
+#   -> "La passphrase ... es: clave-del-parcial"
+
+# 4) entrar por SSH como pepito (poné la passphrase del paso 3 cuando la pida)
+ssh -i mykey pepito@127.0.0.1</code></pre>
+<div class="trampa"><b>Trampas.</b> El <code>chmod 600</code> no es opcional: con permisos abiertos
+hasta <code>ssh-keygen -y</code> ignora la clave ("UNPROTECTED PRIVATE KEY FILE"). El vhost se
+elige por <b>Host</b>, no por IP ni DNS. El <code>:81</code> reenvía a <code>127.0.0.1:8000</code>,
+que no es accesible directo desde afuera: por eso la passphrase está "escondida".</div>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 3 — SMTP y POP3 a mano</h2>
+<h3>a) Errores de la sesión SMTP</h3>
+<table>
+  <tr><th>En la sesión</th><th>Error</th><th>Lo correcto</th></tr>
+  <tr><td><code>nc 192.168.0.168</code></td><td>falta el puerto y falta <code>-C</code> (CRLF)</td><td><code>nc -C 192.168.0.168 25</code></td></tr>
+  <tr><td><code>HELLO localhost</code></td><td>no es comando SMTP → <code>500</code></td><td><code>EHLO localhost</code> (o <code>HELO</code>)</td></tr>
+  <tr><td><code>MAIL TO:</code></td><td>no existe; el destinatario es <code>RCPT TO</code></td><td><code>RCPT TO:&lt;...&gt;</code></td></tr>
+  <tr><td><code>&lt;you&gt;</code></td><td>no es una casilla real</td><td>una dirección real, p. ej. <code>&lt;legajo@pdc.lab&gt;</code></td></tr>
+  <tr><td>sin línea en blanco</td><td>headers y cuerpo se mezclan</td><td>línea vacía entre headers y cuerpo</td></tr>
+  <tr><td>no termina en <code>.</code></td><td>el server nunca acepta el mensaje</td><td>línea con sólo <code>.</code></td></tr>
+</table>
+<p class="meta">El mensaje queda aceptado recién cuando, después del <code>.</code>, el server responde
+<code>250 ... queued as &lt;ID&gt;</code>. Si la sesión se corta antes, se descarta → el compañero
+está equivocado: no llegó.</p>
+<h3>b) Leer por POP3 y mandar uno a mano</h3>
+<pre><code># leer (:110)
+nc -C 127.0.0.1 110
+USER debsec
+PASS debsec
+STAT            # cuántos mensajes
+LIST            # número + tamaño
+RETR 1          # muestra el mail (el cuerpo viene en base64)
+QUIT
+# decodificar:   echo '&lt;base64&gt;' | base64 -d
+
+# mandar uno (:25) — con nc hace falta -C (CRLF)
+nc -C 127.0.0.1 25
+EHLO pdc.lab
+MAIL FROM:&lt;debsec@pdc.lab&gt;
+RCPT TO:&lt;debsec@pdc.lab&gt;
+DATA
+From: DebSec &lt;debsec@pdc.lab&gt;
+To: &lt;debsec@pdc.lab&gt;
+Subject: DebSec report
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+b2ssIHRvZG8gZW4gb3JkZW4=
+.
+QUIT</code></pre>
+<div class="trampa"><b>Trampas.</b> <code>nc -C</code> termina las líneas con CRLF (lo que pide
+SMTP/POP3). Los mails sin leer están en <code>~/Maildir/new</code>; al hacer login POP3 pasan a
+<code>~/Maildir/cur</code>. <code>EHLO</code>/<code>HELO</code> saludan; <code>HELLO</code> no existe.</div>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 4 — Reconstruir la zona DNS desde el PCAP</h2>
+<pre><code># 1) bajar la captura y abrirla
+curl -O http://127.0.0.1:8008/backup.pcap
+wireshark backup.pcap                 # la GUI no tiene el perfil AppArmor que molesta a tshark
+# (por consola:  tshark -r - &lt; backup.pcap -Y dns )
+
+# 2) de cada reply AUTORITATIVA (flag aa) saco un registro con su TTL.
+#    El SOA aparece también en una respuesta NEGATIVA (NXDOMAIN), en la sección Authority.</code></pre>
+<p>Zona reconstruida (<code>/etc/bind/zones/db.cachito.parcial</code>):</p>
+<pre><code>$TTL 3600
+$ORIGIN cachito.parcial.
+@   IN  SOA ns1.cachito.parcial. admin.cachito.parcial. (
+            2018010101 ; serial original (2018010100) + 1 por el TXT nuevo
+            3600 1800 1209600 300 )
+@           IN  NS    ns1.cachito.parcial.
+ns1         IN  A     192.168.0.238
+@           IN  A     192.168.0.238
+www         IN  CNAME @
+@           IN  MX 10 mail.cachito.parcial.
+mail        IN  A     192.168.0.238
+@       864000 IN TXT "cachito meme: no toques la zona"
+@              IN TXT "cachito tiene prohibido editar este archivo"</code></pre>
+<pre><code># declarar en /etc/bind/named.conf.local:
+#   zone "cachito.parcial" { type master; file "/etc/bind/zones/db.cachito.parcial"; };
+sudo named-checkconf
+sudo named-checkzone cachito.parcial /etc/bind/zones/db.cachito.parcial
+sudo rndc reload               # si la zona ya estaba declarada y sólo cambió el archivo
+dig @127.0.0.1 cachito.parcial ANY +noall +answer    # tienen que venir con flag 'aa'</code></pre>
+<div class="trampa"><b>Trampas (las que más cuestan).</b>
+<ul>
+  <li>El TTL del TXT "meme" es <b>864000</b> (10 días), distinto del resto (3600): copialo
+      <b>tal cual sale de la captura</b>, no asumas el <code>$TTL</code>.</li>
+  <li>Los dos TXT de <code>@</code> son el <b>mismo RRset</b> (<code>cachito.parcial/TXT</code>) y un
+      RRset tiene <b>un solo TTL</b>: BIND unifica ambos al del primero (864000) y avisa
+      <code>TTL set to prior TTL</code>. Es correcto; por eso no tiene sentido ponerle 3600 al TXT
+      nuevo.</li>
+  <li><code>www</code> es un <b>CNAME</b> a <code>@</code>, no un A.</li>
+  <li>El <b>SOA sale de la respuesta negativa</b> (NXDOMAIN). El <b>serial sube en 1</b> porque
+      agregaste un registro.</li>
+  <li><code>rndc reconfig</code> carga zonas <i>nuevas</i>; si cambiás el archivo de una zona ya
+      declarada, usá <code>rndc reload</code>.</li>
+</ul></div>
+</div>
+
+<hr>
+<h3>Credenciales y puertos del laboratorio</h3>
+<table>
+  <tr><th>Ej</th><th>Dato</th><th>Valor</th></tr>
+  <tr><td>1</td><td>proxy / miembro</td><td><code>ej1.protos.foo:3126</code> · <code>debsec / hackerspace</code></td></tr>
+  <tr><td>2</td><td>usuario SSH / passphrase</td><td><code>pepito</code> · <code>clave-del-parcial</code></td></tr>
+  <tr><td>3</td><td>POP3</td><td><code>debsec / debsec</code> @ <code>pdc.lab</code></td></tr>
+  <tr><td>4</td><td>zona / descarga</td><td><code>cachito.parcial</code> · <code>http://127.0.0.1:8008/backup.pcap</code></td></tr>
+</table>
+<p class="meta">Son credenciales de práctica, deliberadamente conocidas (el chiste del ejercicio es
+descubrirlas). El lab corre sólo en loopback en tu VM.</p>
+
+<p class="foot">Patrón del parcial: un "llegar a algo" (proxy), un nginx proxy reverso, un protocolo
+de aplicación a mano (mail) y uno de DNS. Más en <code>apuntes/14</code> y <code>apuntes/20</code>.</p>
+
+</body>
+</html>

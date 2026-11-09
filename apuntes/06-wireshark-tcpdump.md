@@ -57,3 +57,8 @@ sudo tcpdump -ni any -w captura.pcap port 80    # guardar en un archivo (despué
 tshark -i lo -f "port 110" -Y pop               # -f captura, -Y visualización
 tshark -r captura.pcap -Y http.request -T fields -e http.host -e http.request.uri
 ```
+
+**En esta VM, `tshark -r ~/algo` da "You don't have permission"** aunque el archivo sea tuyo:
+el perfil de AppArmor de tshark no lo deja leer tu home (sí `/tmp`). Pasáselo por stdin:
+`tshark -r - < ~/pcapej4`. La interfaz gráfica (`wireshark`) no tiene ese perfil y lo abre
+bien. Leer DNS de una captura para reconstruir una zona: `19-dns-desde-pcap.md`.

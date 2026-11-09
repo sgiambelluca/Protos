@@ -1,0 +1,54 @@
+; ============================================================
+; Parcial 2026 2C, Ej 4: zona protos.parcial RECONSTRUIDA a partir de ~/pcapej4
+; (explicación paso a paso en apuntes/19-dns-desde-pcap.md)
+;
+; Cada línea dice de qué paquete de la captura sale.  Los números de "frame" son
+; los de la columna No. de Wireshark.
+; ============================================================
+
+$TTL 86400                ; casi todo vino con TTL 86400 (1 día) -> va como default
+$ORIGIN protos.parcial.
+
+; ---- SOA: sale del frame 10 ----------------------------------
+; Nadie pidió el SOA, pero la consulta a fake.protos.parcial (que NO existe)
+; devolvió NXDOMAIN, y bind pone el SOA de la zona en la sección AUTHORITY
+; ("Authoritative nameservers" en Wireshark).
+; El mailbox: Wireshark lo muestra como admin@itba.edu.ar, pero en la zona va
+; con PUNTO en vez de @ y con punto final.
+@       IN  SOA ns1.protos.parcial. admin.itba.edu.ar. (
+            2026102702  ; serial:  en la captura 2026102701; +1 porque AGREGAMOS el TXT nuevo
+            3600        ; refresh  (1 h)
+            1800        ; retry    (30 min)
+            1209600     ; expire   (14 días)
+            3600 )      ; minimum = TTL negativo (1 h)
+
+; ---- NS: frame 2 (sección ANSWER) ------------------------------
+@       IN  NS  ns1.protos.parcial.
+@       IN  NS  ns2.protos.parcial.
+
+; Las A de ns1 y ns2 vinieron en la sección ADDITIONAL del mismo frame 2
+; (bind las agrega solo, para que no tengas que hacer otra consulta).
+ns1     IN  A   192.0.2.10
+ns2     IN  A   192.0.2.11
+
+; ---- MX: frame 4 -----------------------------------------------
+; En la captura aparece primero el de 20: el ORDEN no importa, la PREFERENCIA sí
+; (menor = más prioritario).
+@       IN  MX  10 mail.protos.parcial.
+@       IN  MX  20 backup.protos.parcial.
+
+; A de los servidores de mail: ADDITIONAL del frame 4
+mail    IN  A   192.0.2.20
+backup  IN  A   192.0.2.21
+
+; ---- TXT del dominio: frame 6 -----------------------------------
+@       IN  TXT "v=spf1 ip4:225.0.0.3 ~all"
+
+; ---- TXT de meme: frame 8 ---------------------------------------
+; ¡TRAMPA!  Este vino con TTL 864000 (10 días), no 86400.  Hay que ponerlo a mano
+; en la línea; si no, toma el $TTL de arriba y la respuesta queda distinta.
+meme    864000  IN  TXT "https://xkcd.com/927/"
+
+; ---- Lo que pide el enunciado: un TXT pidiendo más seguridad -----
+; (No estaba en la captura: es lo NUEVO, por eso se subió el serial.)
+seguridad   IN  TXT "Che, sumen DNSSEC y pasen el SPF a -all. No es otro estandar nuevo como el de xkcd 927, es el que ya existe"

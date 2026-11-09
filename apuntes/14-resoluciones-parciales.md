@@ -10,6 +10,7 @@ cubre:
 | 2024 2C | Ej I, II, III, IV | capturas en el repo |
 | 2025 2C | Ej I, II, III, IV | fotos en el repo |
 | 2026 1C | Ej 1, 2, 3, 4 | **no hay consigna** en el repo: la reconstruí desde la resolución |
+| 2026 2C | Ej 4 (zona desde una captura) | el tuyo: está resuelto aparte, en `19-dns-desde-pcap.md` |
 
 Cada resolución de abajo **se probó en la VM** el 26/10/2026, simulando los servidores de
 la cátedra con servicios locales. Las excepciones se aclaran (los ejercicios de la red del
@@ -23,7 +24,7 @@ laboratorio no se pueden probar desde casa). Los archivos listos para copiar est
 | **nginx proxy reverso** (la URL no cambia) | sí | Ej I | Ej IV (con HTTPS) | Ej 2 (con headers) | 03 |
 | **Túnel SSH + `tail -f` + nc** | Ej 2 | | | Ej 4 | 10 |
 | **curl + proxy SOCKS5h + headers / Basic auth** | | Ej II | | Ej 3 | 02 |
-| **bind9: armar o corregir una zona** | sí | | Ej III | Ej 1 | 04 |
+| **bind9: armar o corregir una zona** | sí | | Ej III | Ej 1 | 04 (y 19: en 2026 2C, armarla desde una captura) |
 | **Ruta a otra red + nmap + curl + traceroute** | | Ej III | Ej II | | 08, 09 |
 | **Mail por SMTP a mano (MIME, encoded-words) + POP3** | | Ej IV | | | 05 |
 | **DHCP (isc-dhcp-server)** | | | Ej I | | 12 |
@@ -991,6 +992,7 @@ tail -f archivo.log                                                             
 | Ejercicio | Cómo |
 |---|---|
 | Zonas (2025 Ej III, 2026 Ej 1, 2022 demiloo) | `cd ~/Protos/ejercicios/parciales && named-checkzone it.itba.edu.ar 2025-2c-ej3-zona-ORIGINAL-con-errores.db`. Copiar el ORIGINAL y corregirlo vos de a un error |
+| Zona desde una captura (2026 2C Ej 4) | armarla desde `~/pcapej4` (o la de repaso) y corregirla con `~/Protos/scripts/practicar-dns-pcap.sh verificar [captura]`. Ver `19-dns-desde-pcap.md` |
 | DHCP (2025 Ej I, simulacro Ej 4) | `~/Protos/scripts/practicar-dhcp.sh [tu.conf]`: arma veth, dhcpd y el nmap del enunciado, y después limpia |
 | Proxies nginx (2024 Ej I, 2026 Ej 2, 2025 Ej IV, 2022 foo.leak) | copiar el archivo de `ejercicios/parciales/` a sites-available. Para que el upstream resuelva sin la red del parcial, poné el nombre en `/etc/hosts` apuntando a 127.0.0.1 y servilo con otro `server {}` de nginx |
 | SOCKS (2024 Ej II, 2026 Ej 3) | `ssh -fN -D 1080 localhost` y usar `-x socks5h://127.0.0.1:1080` contra `http://foo/` |
