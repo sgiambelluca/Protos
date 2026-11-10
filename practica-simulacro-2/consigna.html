@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Consigna — Simulacro 2</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1a1a1a;
+         font-size: 11.2pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 2pt; }
+  h2 { font-size: 14pt; margin: 22pt 0 6pt; padding-bottom: 3pt;
+       border-bottom: 2px solid #7a1ca8; color: #5e1283; }
+  .sub { color: #555; margin: 0 0 4pt; }
+  .meta { color: #666; font-size: 9.5pt; margin: 0 0 12pt; }
+  code, pre { font-family: "SF Mono", "Menlo", "Consolas", monospace; }
+  code { background: #f1f3f7; padding: 1px 4px; border-radius: 3px; font-size: 9.6pt; }
+  pre { background: #0f172a; color: #e6edf6; padding: 9px 12px; border-radius: 6px;
+        font-size: 9.2pt; line-height: 1.45; white-space: pre-wrap; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .box { background: #faf5fe; border: 1px solid #e7d3f3; border-left: 4px solid #7a1ca8;
+         border-radius: 5px; padding: 8px 12px; margin: 8px 0; }
+  .tag { display: inline-block; background: #7a1ca8; color: #fff; font-size: 8.5pt;
+         font-weight: 600; padding: 1px 8px; border-radius: 10px; vertical-align: middle; }
+  .ej { page-break-inside: avoid; }
+  ul { margin: 4pt 0; padding-left: 20px; } li { margin: 2pt 0; }
+  .nota { color: #555; font-size: 9.8pt; }
+  hr { border: none; border-top: 1px solid #e2e6ee; margin: 16pt 0; }
+  .foot { color: #888; font-size: 9pt; margin-top: 18pt; }
+  b.k { color: #5e1283; }
+</style>
+</head>
+<body>
+
+<h1>Simulacro 2</h1>
+<p class="sub">Protocolos de Comunicación (ITBA 72.07) · segundo simulacro, estilo parciales viejos</p>
+<p class="meta">Todo corre en una sola VM por loopback. Montá los escenarios con
+<code>~/Protos/practica-simulacro-2/simulacro-2.sh montar todo</code> (o <code>ejN</code>), y corregí
+con <code>… verificar ejN</code>.</p>
+
+<div class="box"><b>Cómo se juega (leé esto):</b>
+<ul>
+  <li>Los servidores te van dejando <b>pistas</b>, pero <b>no</b> el comando hecho: lo armás vos.</li>
+  <li>Muchas pistas viven en los <b>headers</b> de la respuesta, no en el cuerpo → vas a necesitar
+      <code>curl -v</code> (o <code>-i</code>) seguido.</li>
+  <li>Los proxies de este simulacro son <b>SOCKS</b>, no HTTP.</li>
+  <li>Si te trabás de verdad: <code>simulacro-2.sh pista ejN</code> (una pista corta) o
+      <code>solucion ejN</code> (todo).</li>
+</ul></div>
+
+<div class="ej">
+<h2>Ejercicio 1 <span class="tag">túnel SOCKS + HTTP</span></h2>
+<p>Te infiltraste en <b>Bloom</b> y dejaste un <b>túnel abierto</b> hacia su intranet. El panel interno
+es <code>intranet.bloom.foo</code>, y tus credenciales de agente son <b class="k">agente&nbsp;/&nbsp;topo</b>.</p>
+<p>Entrá al panel y traé el <b>plan de la operación</b>.</p>
+<ul>
+  <li>Averiguá en qué puerto quedó escuchando el túnel (algo escucha de más en la VM…).</li>
+  <li>El panel no te lo va a dar tan fácil: <b>leé todo lo que te responde el servidor</b>, no solo
+      lo que se ve en pantalla.</li>
+</ul>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 2 <span class="tag">reverse proxy + headers</span></h2>
+<p>Bloom tiene un portal público en <code>http://portal.bloom.foo/</code> que en realidad es un
+<b>proxy</b> a un servicio interno. El servicio guarda un dato que <b>no muestra en la página</b>.</p>
+<p>Conseguí ese dato.</p>
+<p class="nota">Pista fuerte: el dato no está en el cuerpo de la respuesta. Fijate qué te contesta el
+servidor… y qué espera que vos le mandes.</p>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 3 <span class="tag">DNS / bind9</span></h2>
+<p>La zona <code>bloom.lab</code> (archivo <code>/etc/bind/zones/db.bloom.lab</code>) quedó <b>rota</b>:
+bind no la carga. <b>Corregila</b> para que:</p>
+<ul>
+  <li>cargue sin errores,</li>
+  <li>resuelva <code>@</code> y <code>www</code> (A), <code>ns1</code>, y el <code>MX</code> apuntando a
+      <code>mail.bloom.lab</code>,</li>
+</ul>
+<p>y recargá bind. Son <b>3 errores típicos</b> de archivos de zona.</p>
+<p class="nota">Arrancá por <code>named-checkzone</code>: te marca las líneas. El resto, a ojo.</p>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 4 <span class="tag">SMTP + MIME</span></h2>
+<p>Mandá un informe por <b>SMTP a mano</b> (<code>:25</code>) a la casilla <code>topo@pdc.lab</code>
+(POP3 <code>topo / topo</code>). El informe tiene que cumplir:</p>
+<ul>
+  <li><b>Subject:</b> <code>Informe: situación crítica</code> (con tildes, en castellano);</li>
+  <li>un header <code>X-Parcial: 2026/2</code>;</li>
+  <li>el cuerpo <b>sólo en base64</b> (nada de quoted-printable).</li>
+</ul>
+<p>Después verificá por POP3 que entró.</p>
+<p class="nota">Pista: un Subject con tildes/eñes no puede ir en texto plano en un header. Averiguá cómo
+se codifican los headers con caracteres no-ASCII (MIME “encoded-words”).</p>
+</div>
+
+<hr>
+<p class="foot">Corrector: <code>simulacro-2.sh verificar ejN</code> · Pista: <code>pista ejN</code> ·
+Solución: <code>solucion.pdf</code> o <code>solucion ejN</code> · Limpieza: <code>limpiar todo</code></p>
+
+</body>
+</html>

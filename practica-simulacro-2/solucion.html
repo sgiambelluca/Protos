@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Solución — Simulacro 2</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1a1a1a;
+         font-size: 11pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 2pt; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; padding-bottom: 3pt;
+       border-bottom: 2px solid #0a7d4d; color: #0a6b42; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 3pt; color: #5e1283; }
+  .sub { color: #555; margin: 0 0 4pt; }
+  .meta { color: #666; font-size: 9.5pt; margin: 0 0 14pt; }
+  code, pre { font-family: "SF Mono", "Menlo", "Consolas", monospace; }
+  code { background: #f1f3f7; padding: 1px 4px; border-radius: 3px; font-size: 9.5pt; }
+  pre { background: #0f172a; color: #e6edf6; padding: 9px 12px; border-radius: 6px;
+        font-size: 9pt; line-height: 1.45; white-space: pre-wrap; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .trampa { background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #ea8a1e;
+            border-radius: 5px; padding: 7px 12px; margin: 8px 0; }
+  .trampa b { color: #b45309; }
+  .ej { page-break-inside: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 7px 0; font-size: 9.6pt; }
+  th, td { border: 1px solid #d7deea; padding: 4px 7px; text-align: left; vertical-align: top; }
+  th { background: #eef2f9; }
+  ul { margin: 4pt 0; padding-left: 20px; } li { margin: 2pt 0; }
+  hr { border: none; border-top: 1px solid #e2e6ee; margin: 14pt 0; }
+  .foot { color: #888; font-size: 9pt; margin-top: 16pt; }
+</style>
+</head>
+<body>
+
+<h1>Solución — Simulacro 2</h1>
+<p class="sub">Protocolos de Comunicación (ITBA 72.07) · resolución paso a paso</p>
+<p class="meta">Escenarios en una sola VM por loopback. Proxies SOCKS, mucho header (usá <code>-v</code>).</p>
+
+<h3>Uso del corrector</h3>
+<pre><code>S=~/Protos/practica-simulacro-2/simulacro-2.sh
+$S montar    ej1      # levanta los servidores (o 'todo')
+$S verificar ej1      # corrige: OK / FALLA por requisito
+$S pista     ej1      # una pista corta
+$S solucion  ej1      # esta resolución
+$S limpiar   ej1      # saca TODO lo del ejercicio</code></pre>
+
+<div class="ej">
+<h2>Ejercicio 1 — Túnel SOCKS + negociación de contenido + Basic auth</h2>
+<p>El túnel es un <b>proxy SOCKS</b> (lo levantó un <code>ssh -D</code>). Averiguás el puerto:</p>
+<pre><code>ss -tlnp | grep ssh        # algo escuchando en 127.0.0.1:1080</code></pre>
+<p>Un proxy SOCKS se usa con <code>-x socks5h://</code> (con la <b>h</b>, para que resuelva el proxy).
+El panel pide Basic auth (<code>agente / topo</code>) y además <b>negocia el idioma</b>: el plan sólo
+está en la edición en español. El servidor te lo avisa con el header <code>Vary: Accept-Language</code>
+(por eso hay que mirar los headers):</p>
+<pre><code># con -v ves el header Vary (ahí está la pista):
+curl -v -x socks5h://localhost:1080 -u agente:topo http://intranet.bloom.foo:8081/
+# te da la edición en inglés (redacted). Pedí la española:
+curl -x socks5h://localhost:1080 -u agente:topo \
+     -H "Accept-Language: es" http://intranet.bloom.foo:8081/
+#   -> FLAG{socks-negociacion-ok}</code></pre>
+<div class="trampa"><b>Claves.</b> <code>socks5h</code> (no <code>socks5</code>) para proxies de
+nombres internos. Sin <code>-u</code> → <code>401</code>. Sin <code>Accept-Language: es</code> → edición
+en inglés, sin flag. El header <code>Vary</code> te dice según qué cambia la respuesta.</div>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 2 — Reverse proxy: un header de ida, otro de vuelta</h2>
+<p>“El dato no está en el cuerpo” = está en un <b>header de respuesta</b>. Lo ves con <code>-v</code>
+o <code>-i</code>. La primera respuesta trae un <code>X-Expected: X-Parcial</code>: te dice qué header
+mandar. Se lo mandás con el valor del parcial (formato <code>AAAA/C</code>). El reverse proxy reenvía
+tu header al backend, y el backend te devuelve el dato en otro header:</p>
+<pre><code>curl -v http://portal.bloom.foo/                       # &lt; X-Expected: X-Parcial
+curl -v -H "X-Parcial: 2026/2" http://portal.bloom.foo/
+#   en la respuesta:  &lt; X-Flag: FLAG{headers-ida-y-vuelta}</code></pre>
+<div class="trampa"><b>Concepto.</b> Un reverse proxy puede reenviar headers en los dos sentidos
+(acá con <code>proxy_set_header X-Parcial $http_x_parcial</code> hacia el backend, y nginx pasa los
+headers de respuesta del backend al cliente). Si no usás <code>-v</code>/<code>-i</code>, no ves nada.</div>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 3 — Corregir la zona rota</h2>
+<p>Corré <code>sudo named-checkzone bloom.lab /etc/bind/zones/db.bloom.lab</code> y arreglá, en este
+orden, los 3 errores:</p>
+<table>
+  <tr><th>#</th><th>Error</th><th>Corrección</th></tr>
+  <tr><td>1</td><td>SOA con <code>admin@bloom.lab.</code></td><td><code>admin.bloom.lab.</code> — en el
+      mail del SOA, la <code>@</code> se escribe como un punto</td></tr>
+  <tr><td>2</td><td><code>www</code> tiene <code>CNAME</code> <b>y</b> un <code>A</code></td>
+      <td>sacar el <code>A</code>: un CNAME no convive con otros registros (“CNAME and other data”)</td></tr>
+  <tr><td>3</td><td><code>MX 10 mail.bloom.lab</code> sin punto final</td>
+      <td><code>mail.bloom.lab.</code> con punto: sin él se le pega el <code>$ORIGIN</code>
+      (<code>mail.bloom.lab.bloom.lab.</code>)</td></tr>
+</table>
+<p>Y subí el serial del SOA. Después:</p>
+<pre><code>sudo named-checkzone bloom.lab /etc/bind/zones/db.bloom.lab   # tiene que terminar en OK
+sudo rndc reload bloom.lab
+dig @127.0.0.1 bloom.lab MX +noall +answer                    # mail.bloom.lab. (sin duplicar)</code></pre>
+<div class="trampa"><b>De yapa (de parciales viejos).</b> Si fuera una zona con secundarios, el serial
+nuevo tiene que ser <b>mayor</b> que el viejo y con la misma cantidad de dígitos (p. ej. 10), si no los
+secundarios no transfieren.</div>
+</div>
+
+<div class="ej">
+<h2>Ejercicio 4 — Mail con encoded-words + X-Parcial + base64</h2>
+<p>Un header no es 8-bit: el Subject con tildes va en <b>MIME encoded-words</b>
+(<code>=?charset?B?&lt;base64&gt;?=</code> para base64). Y el cuerpo en base64. Primero generás las
+codificaciones:</p>
+<pre><code>printf '%s' 'Informe: situación crítica' | base64   # -> para el Subject
+printf '%s' 'sin novedades en el frente'  | base64   # -> para el cuerpo</code></pre>
+<pre><code>nc -C 127.0.0.1 25
+EHLO pdc.lab
+MAIL FROM:&lt;topo@pdc.lab&gt;
+RCPT TO:&lt;topo@pdc.lab&gt;
+DATA
+From: Topo &lt;topo@pdc.lab&gt;
+To: &lt;topo@pdc.lab&gt;
+Subject: =?UTF-8?B?SW5mb3JtZTogc2l0dWFjacOzbiBjcsOtdGljYQ==?=
+X-Parcial: 2026/2
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+c2luIG5vdmVkYWRlcyBlbiBlbCBmcmVudGU=
+.
+QUIT</code></pre>
+<div class="trampa"><b>Claves.</b> <code>=?UTF-8?B?…?=</code> en el Subject (B = base64, Q = quoted-printable).
+El <code>X-Parcial</code> es un header más (antes de la línea en blanco). El cuerpo en base64 con su
+<code>Content-Transfer-Encoding: base64</code>. Y cerrar el <code>DATA</code> con la línea del punto →
+<code>250 queued</code>. Verificás con POP3 (<code>USER/PASS/STAT/LIST/RETR 1</code>).</div>
+</div>
+
+<hr>
+<h3>Qué practica cada uno (y de qué parcial viejo sale)</h3>
+<table>
+  <tr><th>Ej</th><th>Tema</th><th>Referencia</th></tr>
+  <tr><td>1</td><td>proxy SOCKS (<code>socks5h</code>) + negociación de contenido + Basic auth</td><td>2024 Ej II</td></tr>
+  <tr><td>2</td><td>reverse proxy + reenvío de headers en los dos sentidos</td><td>2024 Ej I</td></tr>
+  <tr><td>3</td><td>corregir una zona bind (SOA, CNAME+datos, punto final)</td><td>2025 Ej III</td></tr>
+  <tr><td>4</td><td>mail a mano: encoded-words + header custom + base64</td><td>2024 Ej IV</td></tr>
+</table>
+<p class="foot">Patrón del parcial: un “llegar a algo” (proxy/túnel), un reverse proxy, uno de DNS y uno
+de protocolo de aplicación a mano. Repaso en <code>apuntes/02, 03, 04, 05</code>.</p>
+
+</body>
+</html>
